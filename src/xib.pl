@@ -25,6 +25,7 @@ use strict;
 use warnings;
 use Getopt::Long "HelpMessage";
 use File::Basename;
+use Sort::TSort "tsort";
 
 our $BUILDFILES_REPO = "https://xi.davidovski.xyz/git/buildfiles.git";
 
@@ -74,7 +75,7 @@ sub list_buildfiles{
     return @files;
 }
 
-sub determine_build_order{
+sub get_packages{
     my %pkgs = ();
     
     my @files = list_buildfiles();
@@ -83,14 +84,59 @@ sub determine_build_order{
         my $pkg_file = $_;
         my $pkg_name = basename($pkg_file, ".xibuild");
 
-        my @deps = list_dependencies($pkg_file)
-        $pkgs{"$pkg_file"} = @deps;
+        my @deps = list_dependencies($pkg_file);
+        $pkgs{$pkg_name} = \@deps;
     }
 
-    for (keys %pkgs) {
-        print("$_ has the deps: $pkgs{$_}\n")
+    return %pkgs;
+}
+
+sub get_depended_on{
+    my (%pkgs) = @_;
+    my %depended = ();
+
+    foreach (keys(%pkgs)) {
+        my @empty = ();
+        $depended{$_} = \@empty;
+    }
+
+    foreach (keys(%pkgs)) {
+        my $apkg = $_;
+        foreach (keys(%pkgs)) {
+            my $bpkg = $_;
+            my @deps = @{$pkgs{$_}};
+            if (grep(/^$apkg$/, @deps)) {
+                push(@{$depended{$apkg}}, $bpkg);
+            }
+        }
+    }
+
+    return %depended;
+}
+
+sub determine_build_order{
+    my %pkgs = get_packages();
+
+    my @edges = ();
+    foreach (keys(%pkgs)) {
+        my $pkg = $_;
+        my @deps = @{$pkgs{$_}};
+        foreach (@deps) {
+            my $dep = $_;
+
+            my @edge = ($pkg, $dep);
+            push @edges, [ @edge  ];
+
+        }
+    }
+    
+    my $sorted = tsort(\@edges);
+    
+    foreach(@{$sorted}) {
+        print("$_\n");
     }
 }
+
 
 unless (caller) {
     prepare_xib_environment();
