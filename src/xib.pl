@@ -24,6 +24,7 @@
 use strict;
 use warnings;
 use Getopt::Long "HelpMessage";
+use File::Basename;
 
 our $BUILDFILES_REPO = "https://xi.davidovski.xyz/git/buildfiles.git";
 
@@ -52,13 +53,46 @@ sub pull_buildfiles{
     list_buildfiles();
 } 
 
+sub list_dependencies{
+    my $file = $_;
+    my @deps = ();
+
+    open (my $fh, "<", $file) or warn "Cannot open $file";
+
+    while (my $line = <$fh>) {
+        if ($line =~ /DEPS=\((.+)\)/) {
+            my @words = split(/ /, $1);
+            push(@deps, @words);
+        }
+    }
+
+    return @deps;
+}
+
 sub list_buildfiles{
     my @files = glob("$buildfiles/repo/*/*.xibuild");
+    return @files;
+}
+
+sub determine_build_order{
+    my %pkgs = ();
+    
+    my @files = list_buildfiles();
+
     foreach (@files) {
-        print("$_\n");
+        my $pkg_file = $_;
+        my $pkg_name = basename($pkg_file, ".xibuild");
+
+        my @deps = list_dependencies($pkg_file)
+        $pkgs{"$pkg_file"} = @deps;
+    }
+
+    for (keys %pkgs) {
+        print("$_ has the deps: $pkgs{$_}\n")
     }
 }
 
 unless (caller) {
     prepare_xib_environment();
+    determine_build_order();
 }
