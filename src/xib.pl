@@ -24,15 +24,17 @@
 use strict;
 use warnings;
 use Getopt::Long "HelpMessage";
+
 use File::Basename;
-use Sort::TSort "tsort";
+use lib dirname (__FILE__);
+use BuildOrder "determine_build_order";
 
 our $BUILDFILES_REPO = "https://xi.davidovski.xyz/git/buildfiles.git";
 
 GetOptions(
-        "chroot:s" => \(our $chroot = "/var/xilinux/chroot"),
-        "buildfiles" => \(our $buildfiles = "/var/xilinux/buildfiles"),
-        "export:s" => \(our $export = "/var/xilinux/export"),
+        "chroot:s" => \(our $chroot = "/var/lib/xib/chroot"),
+        "buildfiles" => \(our $buildfiles = "/var/lib/xib/buildfiles"),
+        "export:s" => \(our $export = "/var/lib/xib/export"),
 ) or HelpMessage(1);
 
 sub prepare_xib_environment{
@@ -51,94 +53,11 @@ sub pull_buildfiles{
     } else {
         system("git clone $BUILDFILES_REPO $buildfiles");
     }
-    list_buildfiles();
 } 
-
-sub list_dependencies{
-    my $file = $_;
-    my @deps = ();
-
-    open (my $fh, "<", $file) or warn "Cannot open $file";
-
-    while (my $line = <$fh>) {
-        if ($line =~ /DEPS=\((.+)\)/) {
-            my @words = split(/ /, $1);
-            push(@deps, @words);
-        }
-    }
-
-    return @deps;
-}
-
-sub list_buildfiles{
-    my @files = glob("$buildfiles/repo/*/*.xibuild");
-    return @files;
-}
-
-sub get_packages{
-    my %pkgs = ();
-    
-    my @files = list_buildfiles();
-
-    foreach (@files) {
-        my $pkg_file = $_;
-        my $pkg_name = basename($pkg_file, ".xibuild");
-
-        my @deps = list_dependencies($pkg_file);
-        $pkgs{$pkg_name} = \@deps;
-    }
-
-    return %pkgs;
-}
-
-sub get_depended_on{
-    my (%pkgs) = @_;
-    my %depended = ();
-
-    foreach (keys(%pkgs)) {
-        my @empty = ();
-        $depended{$_} = \@empty;
-    }
-
-    foreach (keys(%pkgs)) {
-        my $apkg = $_;
-        foreach (keys(%pkgs)) {
-            my $bpkg = $_;
-            my @deps = @{$pkgs{$_}};
-            if (grep(/^$apkg$/, @deps)) {
-                push(@{$depended{$apkg}}, $bpkg);
-            }
-        }
-    }
-
-    return %depended;
-}
-
-sub determine_build_order{
-    my %pkgs = get_packages();
-
-    my @edges = ();
-    foreach (keys(%pkgs)) {
-        my $pkg = $_;
-        my @deps = @{$pkgs{$_}};
-        foreach (@deps) {
-            my $dep = $_;
-
-            my @edge = ($pkg, $dep);
-            push @edges, [ @edge  ];
-
-        }
-    }
-    
-    my $sorted = tsort(\@edges);
-    
-    foreach(@{$sorted}) {
-        print("$_\n");
-    }
-}
 
 
 unless (caller) {
     prepare_xib_environment();
-    determine_build_order();
+    my $file = "$chroot/buildorder";
+    BuildOrder::determine_build_order($file);
 }
