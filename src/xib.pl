@@ -28,6 +28,7 @@ use Getopt::Long "HelpMessage";
 use File::Basename;
 use lib dirname (__FILE__);
 use BuildOrder "determine_build_order";
+use BuildPackage;
 
 our $BUILDFILES_REPO = "https://xi.davidovski.xyz/git/buildfiles.git";
 
@@ -54,7 +55,6 @@ sub pull_buildfiles{
         system("git clone $BUILDFILES_REPO $buildfiles");
     }
 } 
-
 
 unless (caller) {
     prepare_xib_environment();
