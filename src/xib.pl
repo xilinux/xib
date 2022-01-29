@@ -21,6 +21,8 @@
 # - add some info to package info
 # - if requested, install to the chroot
 
+use v5.12;
+
 use strict;
 use warnings;
 use Getopt::Long "HelpMessage";
@@ -28,6 +30,7 @@ use Getopt::Long "HelpMessage";
 use File::Basename;
 use lib dirname (__FILE__);
 use BuildOrder "determine_build_order";
+use XibUtil "extract";
 use BuildPackage;
 
 our $BUILDFILES_REPO = "https://xi.davidovski.xyz/git/buildfiles.git";
@@ -60,4 +63,5 @@ unless (caller) {
     prepare_xib_environment();
     my $file = "$chroot/buildorder";
     BuildOrder::determine_build_order($file);
+    BuildPackage::build_package("$buildfiles/repo/util/vim.xibuild");
 }

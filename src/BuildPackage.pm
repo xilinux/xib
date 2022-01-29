@@ -3,35 +3,19 @@ package BuildPackage;
 use strict;
 use warnings;
 
-use File::Basename "basename";
-use Digest::MD5;
+use File::Basename;
+use XibUtil qw/extract_from_file extract md5_sum/;
 
-sub md5_sum{
-    my ($file) = @_;
-
-    open(my $fh, "<", $file) or die "Cannot open $file: $!";
-    binmode($fh);
-
-    return Digest::MD5->new->addfile($fh)->hexdigest;
+sub extract_source{
+    return XibUtil::extract_from_file(@_, qr/^SOURCE=(.+)$/);
 }
 
-sub extract_ver_hash{
-    my $info_file = $_;
-    open (my $fh, "<", $info_file) or warn "Cannot open $info_file";
-    while (my $line = <$fh>) {
-        if ($line =~ /^VER_HASH=(.+)$/) {
-            return $1;
-        }
-    }
+sub extract_branch{
+    return XibUtil::extract_from_file(@_, qr/^BRANCH=(.+)$/);
 }
-sub extract_ver_hash{
-    my $info_file = $_;
-    open (my $fh, "<", $info_file) or warn "Cannot open $info_file";
-    while (my $line = <$fh>) {
-        if ($line =~ /^VER_HASH=(.+)$/) {
-            return $1;
-        }
-    }
+
+sub extract_version{
+    return XibUtil::extract_from_file(@_, qr/^PKG_VER=(.+)$/);
 }
 
 sub get_built_version{
@@ -55,10 +39,29 @@ sub clear_build_folder{
 }
 
 sub fetch_source{
-    my $source_url = $_;
+    my ($build_file) = @_;
    
-    mkdir("$main::chroot/build")
-    mkdir("$main::chroot/build/source")
+    mkdir("$main::chroot/build");
+    mkdir("$main::chroot/build/source");
+    chdir("$main::chroot/build/source");
+
+    my $source = extract_source($build_file);
+    my $branch = extract_branch($build_file);
+    my $PKG_VER = extract_version($build_file);
+
+    if (XibUtil::is_git_repo($source, $branch)) {
+        print("Fetching git repo $source version $PKG_VER\n");
+        system("git clone $source .");
+        system("git checkout $branch");
+
+    } else {
+        print("downloading file $source\n");
+        my $downloaded_file = basename($source);
+        system("curl $source $downloaded_file");
+        extract("$downloaded_file");
+        system("pwd; cp -r */* .")
+    
+    }
 
     # download source to $chroot/build/mysource.tgz
     # extract source to $chroot/build/source
@@ -67,12 +70,16 @@ sub fetch_source{
 sub build_package{
     my ($build_file) = @_;
 
-    $existing_version = get_built_version($build_file);
+    my $existing_version = get_built_version($build_file);
     if (defined($existing_version) && $existing_version eq md5_sum($build_file)) {
         # do not build
+        print("do not build\n");
         return
     } 
     # build
+    fetch_source($build_file);
+    
     
 
 }
+1;
