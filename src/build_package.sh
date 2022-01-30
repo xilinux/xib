@@ -1,5 +1,8 @@
 #!/bin/bash
 
+GREEN="\033[0;32m"
+BLUE="\033[0;34m"
+
 BUILDFILE=$1
 REPO=$(echo $BUILDFILE | rev | cut -d/ -f2 | rev)
 NAME=$(basename $BUILDFILE .xibuild)
@@ -43,30 +46,43 @@ package_exists () {
 }
 
 fetch_source () {
+    # download additional files
     local src_dir="$XIB_CHROOT/build/source"
     mkdir -p $src_dir
 
     cd $src_dir
 
-    if git ls-remote -q $SOURCE $BRANCH &> /dev/null; then
-        # The source is a git repo
-        git clone $SOURCE .
-        git checkout $BRANCH
-    else
-        # The source is a file
+    if [ ! -z ${SOURCE} ]; then
 
-        local downloaded_file=$(basename $SOURCE)
-        curl -SsL $SOURCE > $downloaded_file
-        extract $downloaded_file
+        if git ls-remote -q $SOURCE $BRANCH &> /dev/null; then
+            # The source is a git repo
+            git clone $SOURCE .
+            git checkout $BRANCH
+        else
+            # The source is a file
 
-        # if the extracted file only had one directory
-        if [ "$(ls -l | wc -l)" = "3" ]; then
-            for file in */*; do 
-                mv $file .
-            done;
+            local downloaded_file=$(basename $SOURCE)
+            curl -SsL $SOURCE > $downloaded_file
+            extract $downloaded_file
+
+            # if the extracted file only had one directory
+            if [ "$(ls -l | wc -l)" = "3" ]; then
+                for file in */* */.*; do 
+                    echo $file | grep -q '\.$' || mv $file .
+                done;
+            fi
         fi
     fi
+
+    # download additional files
+    if [ ! -z ${ADDITIONAL} ]; then
+        for url in ${ADDITIONAL[*]}; do
+            local name=$(basename $url)
+            curl -Ssl $url > $src_dir/$name 
+        done
+    fi
 }
+
 
 clean_chroot () {
     local export_dir="$XIB_CHROOT/export"
@@ -112,9 +128,13 @@ ls
 source $PKG_NAME.xibuild
 cd /build/source
 
+echo "==========================PREPARE STAGE=========================="
 prepare || exit 1
+echo "==========================BUILD STAGE=========================="
 build || exit 1
+echo "==========================CHECK STAGE=========================="
 check 
+echo "==========================PACKAGE STAGE=========================="
 package || exit 1
 
 if command -v postinstall > /dev/null; then 
@@ -137,8 +157,8 @@ package () {
 
     cd "$pkg_dest"
     if [ "$(ls -1 | wc -l)" = "0" ]; then
-        echo "package is empty"
-        exit 1;
+        printf " package is empty;"
+        [ -z "${SOURCE}"] || exit 1;
     fi
     tar -C $pkg_dest -czf $export_pkg ./
 }
@@ -167,27 +187,37 @@ sign () {
 }
 
 build () {
-    clean_chroot
-    fetch_source
-    make_buildscript
+    printf "$BLUE\tCleaning chroot..." 
+    clean_chroot && printf "$GREEN prepared\n" || return 1
+
+    printf "$BLUE\tfetching source..." 
+    fetch_source && printf "$GREEN fetched $(du -sh "$XIB_CHROOT/build/source" | awk '{ print $1 }')\n" || return 1
+
+    printf "$BLUE\tgenerating buildscript..." 
+    make_buildscript && printf "$GREEN generated\n" || return 1
 
     cp "$BUILDFILE" "$XIB_CHROOT/build/"
     printf $NAME > "$XIB_CHROOT/build/name"
 
     local log_file="$XIB_EXPORT/repo/$REPO/$NAME.log"
-    xichroot $XIB_CHROOT /build/build.sh > $log_file 2>&1
 
-    package
-    create_info
+    printf "$BLUE\tBuilding package..." 
+    xichroot $XIB_CHROOT /build/build.sh &> $log_file && printf "$GREEN built!\n" || return 1
+
+    printf "$BLUE\tPackaging package..." 
+    package && printf "$GREEN packaged!\n" || return 1
+
+    printf "$BLUE\tCreating package info..."
+    create_info && printf "$GREEN created info!\n" || return 1
 
     # TODO check if the key exists, if not, skip signing
-    sign
+    printf "$BLUE\tSigning package..."
+    sign && printf "$GREEN signed!\n" || return 1
 
     cp "$BUILDFILE" "$XIB_EXPORT/repo/$REPO/"
-
 }
 
 [ -z "${XIB_CHROOT}" ] && echo "CRITICAL! No chroot env variable set!" && exit 1;
 
-package_exists && printf "exists!" || build
+package_exists && printf "\tPackage exists!\n" || build
 

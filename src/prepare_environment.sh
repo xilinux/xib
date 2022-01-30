@@ -1,5 +1,7 @@
 #!/bin/sh
 
+export MAKEFLAGS="-j12"
+
 export XIB_DIR="/var/lib/xib"
 export XIB_BUILDFILES="$XIB_DIR/buildfiles"
 export XIB_CHROOT="$XIB_DIR/chroot"

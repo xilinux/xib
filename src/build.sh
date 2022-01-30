@@ -11,23 +11,30 @@ source prepare_environment.sh
 build_all () {
     for line in $(perl build_order.pm); do
         name=$(echo $line | cut -d"+" -f1)
-        buildfile=$(find $XIB_BUILDFILES -wholename "*/$name.xibuild" | head -1 | xargs realpath)
+        buildfile=$(find $XIB_BUILDFILES -wholename "*/$name.xibuild" | head -1)
+        
+        if [ -f "$buildfile" ]; then
+            printf $INFO
+            printf "Building$NEUTRAL %s$INFO:\n$RESET" $name 
+            ./build_package.sh $buildfile || return 1
 
-        printf $INFO
-        printf "Building %s...$RESET" $name 
-        ./build_package.sh $buildfile && printf "$PASS passed\n" || return 1
+            # Install the package if it is needed for other builds
+            if echo $line | grep -q '+'; then
+                printf "$INFO\tInstalling..." 
+                exported_pkg=$(find $XIB_EXPORT -wholename "*/$name.xipkg" | head -1 | xargs realpath)
+                if [ -f $exported_pkg ]; then
+                    tar -h --no-overwrite-dir -xf $exported_pkg -C $XIB_CHROOT
+                fi
 
-        # Install the package if it is needed for other builds
-        if echo $line | grep -q '+'; then
-            exported_pkg=$(find $XIB_EXPORT -wholename "*/$name.xipkg" | head -1 | xargs realpath)
-            if [ -f $exported_pkg ]; then
-                cd $XIB_CHROOT
-                tar -xf $exported_pkg
-                cd $OLDPWD
-                printf "$INFO\tInstalled %s$RESET\n" $name 
+                printf "$PASS installed to chroot!\n"
             fi
+
+            printf $RESET
+            printf "Finished building %s!\n" $name
+        else
+            printf "$ERROR$name does not exist\n"
         fi
-    done;
+    done
 
 }
 
