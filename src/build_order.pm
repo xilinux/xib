@@ -1,11 +1,35 @@
-package BuildOrder;
-# tools for determining which order to build packages 
+#!/usr/bin/env perl
+
+# TODO for building the whole system
+# We first need to have a base system that we can build from
+#   (up to chapter 6 in lfs book, done by make_tools.sh)
+# packages need to be build in order of importance
+# need to some how find out which packages are the most important and build and install them to the chroot first
+# build a package, install it if necessary
+# copy the generated package/info to a safe place
+# sign the package
+# put the package in the export folder
+
+# TODO for building a single package:
+# do all the preliminary checks (exists, deps are installed, etc)
+# download source to $chroot/source
+# download additional tools 
+# copy xibuild to the chroot
+# create a "build.sh" script in the chroot
+# - run the 3 stages of package building
+# - create the pacakage in $chroot/$name.xipkg
+# - add some info to package info
+# - if requested, install to the chroot
 
 use strict;
 use warnings;
 
-use File::Basename "basename";
+use Env;
+use File::Basename;
+use lib dirname (__FILE__);
 use Sort::TSort "tsort";
+
+our $buildfiles = $ENV{XIB_BUILDFILES};
 
 sub list_dependencies{
     my $file = $_;
@@ -24,13 +48,13 @@ sub list_dependencies{
 }
 
 sub list_buildfiles{
-    my @files = glob("$main::buildfiles/repo/*/*.xibuild");
+    my @files = glob("$buildfiles/repo/*/*.xibuild");
     # ignore any meta packages during this stage, they can be added later
     return grep(!/\/meta\//, @files);
 }
 
 sub list_meta_pkgs{
-    return map({basename($_, ".xibuild")} glob("$main::buildfiles/repo/meta/*.xibuild"));
+    return map({basename($_, ".xibuild")} glob("$buildfiles/repo/meta/*.xibuild"));
 }
 
 sub get_packages{
@@ -82,7 +106,6 @@ sub get_depended_on{
 }
 
 sub determine_build_order{
-    my ($file) = @_;
     my %pkgs = get_packages();
 
     my @edges = get_edges(%pkgs);
@@ -95,16 +118,14 @@ sub determine_build_order{
     my @meta = list_meta_pkgs();
     push(@sorted, @meta);
 
-    open (my $fh, ">", $file) or die "Cannot open $file";
-
     foreach(@sorted) {
         my $pkg = $_;
-        print($fh "$pkg");
-        print($fh "+") if (grep(/^$pkg/, @install));
-        print($fh "\n");
+        print("$pkg");
+        print("+") if (grep(/^$pkg/, @install));
+        print("\n");
     }
-
-    return $file;
 }
 
-1;
+unless (caller) {
+    determine_build_order();
+}
