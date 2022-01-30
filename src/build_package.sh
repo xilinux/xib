@@ -44,28 +44,28 @@ package_exists () {
 
 fetch_source () {
     local src_dir="$XIB_CHROOT/build/source"
-    mkdir -pv $src_dir
+    mkdir -p $src_dir
 
-    pushd $src_dir
-        if git ls-remote -q $SOURCE $BRANCH &> /dev/null; then
-            # The source is a git repo
-            git clone $SOURCE .
-            git checkout $BRANCH
-        else
-            # The source is a file
+    cd $src_dir
 
-            local downloaded_file=$(basename $SOURCE)
-            curl -SsL $SOURCE > $downloaded_file
-            extract $downloaded_file
+    if git ls-remote -q $SOURCE $BRANCH &> /dev/null; then
+        # The source is a git repo
+        git clone $SOURCE .
+        git checkout $BRANCH
+    else
+        # The source is a file
 
-            # if the extracted file only had one directory
-            if [ "$(ls -l | wc -l)" = "3" ]; then
-                for file in */*; do 
-                    mv $file .
-                done;
-            fi
+        local downloaded_file=$(basename $SOURCE)
+        curl -SsL $SOURCE > $downloaded_file
+        extract $downloaded_file
+
+        # if the extracted file only had one directory
+        if [ "$(ls -l | wc -l)" = "3" ]; then
+            for file in */*; do 
+                mv $file .
+            done;
         fi
-    popd
+    fi
 }
 
 clean_chroot () {
@@ -75,16 +75,19 @@ clean_chroot () {
     rm -rf $export_dir
     rm -rf $build_dir
 
-    mkdir -pv $export_dir
-    mkdir -pv $build_dir
+    mkdir -p $export_dir
+    mkdir -p $build_dir
     
-    mkdir -pv "$XIB_EXPORT/repo/$REPO/"
+    mkdir -p "$XIB_EXPORT/repo/$REPO/"
 }
 
 make_buildscript () {
+
+    echo MAKEFLAGS="$MAKEFLAGS" >> "$XIB_CHROOT/build/profile"
+
     cat > "$XIB_CHROOT/build/build.sh" << "EOF"
 #!/bin/bash
-
+source /build/profile
 export PKG_NAME=$(cat /build/name)
 export PKG_DEST=/export
 
@@ -132,13 +135,12 @@ package () {
     local export_pkg="$XIB_EXPORT/repo/$REPO/$NAME.xipkg"
     local pkg_dest="$XIB_CHROOT/export"
 
-    pushd "$pkg_dest"
-        if [ "$(ls -1 | wc -l)" = "0" ]; then
-            echo "package is empty"
-            exit 1;
-        fi
-        tar -C $pkg_dest -cvzf $export_pkg ./
-    popd
+    cd "$pkg_dest"
+    if [ "$(ls -1 | wc -l)" = "0" ]; then
+        echo "package is empty"
+        exit 1;
+    fi
+    tar -C $pkg_dest -czf $export_pkg ./
 }
 
 create_info () {
@@ -173,7 +175,7 @@ build () {
     printf $NAME > "$XIB_CHROOT/build/name"
 
     local log_file="$XIB_EXPORT/repo/$REPO/$NAME.log"
-    xichroot $XIB_CHROOT /build/build.sh > $log_file
+    xichroot $XIB_CHROOT /build/build.sh > $log_file 2>&1
 
     package
     create_info
@@ -187,4 +189,5 @@ build () {
 
 [ -z "${XIB_CHROOT}" ] && echo "CRITICAL! No chroot env variable set!" && exit 1;
 
-package_exists || build
+package_exists && printf "exists!" || build
+
