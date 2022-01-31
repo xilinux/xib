@@ -20,3 +20,6 @@ if [ -d $XIB_BUILDFILES/.git ]; then
 else
     git clone $BUILDFILES_GIT_REPO $XIB_BUILDFILES
 fi
+
+
+cp /etc/resolv.conf $XIB_CHROOT/etc/resolv.conf

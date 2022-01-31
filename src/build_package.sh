@@ -78,7 +78,7 @@ fetch_source () {
     if [ ! -z ${ADDITIONAL} ]; then
         for url in ${ADDITIONAL[*]}; do
             local name=$(basename $url)
-            curl -Ssl $url > $src_dir/$name 
+            curl -SsL $url > $src_dir/$name 
         done
     fi
 }
