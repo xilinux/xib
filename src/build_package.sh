@@ -56,8 +56,8 @@ fetch_source () {
 
         if git ls-remote -q $SOURCE $BRANCH &> /dev/null; then
             # The source is a git repo
-            git clone $SOURCE .
-            git checkout $BRANCH
+            git clone $SOURCE . > /dev/null
+            git checkout $BRANCH > /dev/null
         else
             # The source is a file
 
@@ -133,7 +133,7 @@ prepare || exit 1
 echo "==========================BUILD STAGE=========================="
 build || exit 1
 echo "==========================CHECK STAGE=========================="
-check 
+check || exit 1
 echo "==========================PACKAGE STAGE=========================="
 package || exit 1
 
@@ -158,7 +158,7 @@ package () {
     cd "$pkg_dest"
     if [ "$(ls -1 | wc -l)" = "0" ]; then
         printf " package is empty;"
-        [ -z "${SOURCE}"] || exit 1;
+        [ -z "${SOURCE}" ] || exit 1;
     fi
     tar -C $pkg_dest -czf $export_pkg ./
 }

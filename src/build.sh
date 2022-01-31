@@ -34,6 +34,14 @@ build_all () {
         else
             printf "$ERROR$name does not exist\n"
         fi
+
+        # configure shadow here
+        if [ "$name" = "shadow" ];
+            xichroot "$XIB_CHROOT" /usr/sbin/pwconv
+            xichroot "$XIB_CHROOT" /usr/sbin/grpconv
+            xichroot "$XIB_CHROOT" "mkdir -p /etc/default"
+            xichroot "$XIB_CHROOT" "useradd -D --gid 999"
+        fi
     done
 
 }

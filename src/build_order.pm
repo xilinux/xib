@@ -50,7 +50,10 @@ sub list_dependencies{
 sub list_buildfiles{
     my @files = glob("$buildfiles/repo/*/*.xibuild");
     # ignore any meta packages during this stage, they can be added later
-    return grep(!/\/meta\//, @files);
+    @files = grep(!/\/meta\//, @files);
+    @files = grep(!/\/skip\//, @files);
+
+    return @files
 }
 
 sub list_meta_pkgs{
