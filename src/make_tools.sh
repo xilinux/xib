@@ -15,6 +15,10 @@ TGT=$(uname -m)-xi-linux-gnu
 export PATH=/usr/bin
 if [ ! -L /bin ]; then export PATH=/bin:$PATH; fi
 export PATH=$SYSTEM_DIR/tools/bin:$PATH
+export CONFIG_SITE=$SYSTEM_DIR/usr/share/config.site
+export LC_ALL=POSIX
+
+
 
 packages=(binutils gcc linux glibc mpfr gmp mpc m4 ncurses bash coreutils diffutils file findutils gawk grep gzip make patch sed tar xz)
 
@@ -60,7 +64,7 @@ extract () {
 make_dir_struct() {
     local system=$1
     
-    mkdir -pv $system/{etc,var,proc,sys,run,tmp} $system/usr/{bin,lib,sbin} $system/bin/{pts,shm}
+    mkdir -pv $system/{etc,var,proc,sys,run,tmp} $system/usr/{bin,lib,sbin} $system/dev/{pts,shm}
 
     for i in bin lib sbin; do
       ln -sv usr/$i $system/$i
@@ -161,6 +165,8 @@ build_gcc1() {
     cd $SOURCES/gcc/
     
     #rm -rf mpfr gmp mpc
+
+    autoreconf -i
 
     [ -d mpfr ] || cp -r $SOURCES/mpfr mpfr
     [ -d gmp ] || cp -r $SOURCES/gmp gmp
@@ -520,6 +526,11 @@ reset_before_build () {
     cd $SYSTEM_DIR; printf "\033[0;34mbuilding $1...\033[0m"
 }
 
+for package in ${packages[@]}; do
+    cd $SYSTEM_DIR
+    touch $package.build.log
+done
+
 reset_before_build "binutils1"
 build_binutils1 &> binutils.build.log && printf "passed\n" || exit 1 
 
@@ -536,7 +547,7 @@ reset_before_build "libstdcxx"
 build_libstdcxx &> libstdcxx.build.log && printf "\033[0;32mpassed\n" || exit 1 
 
 reset_before_build "m4"
-build_m4 && printf "\033[0;32mpassed\n" || exit 1 
+build_m4 &> m4.build.log && printf "\033[0;32mpassed\n" || exit 1 
 
 reset_before_build "ncurses"
 build_ncurses &> ncurses.build.log && printf "\033[0;32mpassed\n" || exit 1 
