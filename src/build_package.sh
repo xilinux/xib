@@ -11,11 +11,11 @@ source $BUILDFILE
 
 extract () {
     FILE=$1
-    case "${FILE#*.}" in 
-        "tar.gz" )
+    case "${FILE##*.}" in 
+        "gz" )
             tar -zxf $FILE
             ;;
-        "tar.lz" )
+        "lz" )
             tar --lzip -xf "$FILE"
             ;;
         "zip" )
@@ -56,8 +56,8 @@ fetch_source () {
 
         if git ls-remote -q $SOURCE $BRANCH &> /dev/null; then
             # The source is a git repo
-            git clone $SOURCE . > /dev/null
-            git checkout $BRANCH > /dev/null
+            git clone $SOURCE . &> /dev/null
+            git checkout $BRANCH &> /dev/null
         else
             # The source is a file
 
@@ -100,6 +100,7 @@ clean_chroot () {
 make_buildscript () {
 
     echo MAKEFLAGS="$MAKEFLAGS" >> "$XIB_CHROOT/build/profile"
+    echo LDFLAGS="$LDFLAGS" >> "$XIB_CHROOT/build/profile"
 
     cat > "$XIB_CHROOT/build/build.sh" << "EOF"
 #!/bin/bash
@@ -137,14 +138,18 @@ check || exit 1
 echo "==========================PACKAGE STAGE=========================="
 package || exit 1
 
+printf "checking for postinstall... "
 if command -v postinstall > /dev/null; then 
-    POSTINSTALL=$(type postinstall | sed '1,3d,$d')
-    if [${#POSTINSTALL} != 0]; then
+    echo "adding postinstall"
+    POSTINSTALL=$(type postinstall | sed '1,3d;$d')
+    if [ ${#POSTINSTALL} != 0 ]; then
         POST_DIR=$PKG_DEST/var/lib/xipkg/postinstall
         mkdir -p $POST_DIR
         echo "#!/bin/sh" > $POST_DIR/$PKG_NAME.sh
         echo $POSTINSTALL >> $POST_DIR/$PKG_NAME.sh
     fi
+else
+    echo "no postinstall"
 fi
 EOF
     chmod 700 "$XIB_CHROOT/build/build.sh"
@@ -205,7 +210,7 @@ build () {
     xichroot $XIB_CHROOT /build/build.sh &> $log_file && printf "$GREEN built!\n" || return 1
 
     printf "$BLUE\tPackaging package..." 
-    package && printf "$GREEN packaged!\n" || return 1
+    package && printf "$GREEN packaged to $(du -sh "$XIB_EXPORT/repo/$REPO/$NAME.xipkg" | awk '{ print $1 }')!\n" || return 1
 
     printf "$BLUE\tCreating package info..."
     create_info && printf "$GREEN created info!\n" || return 1

@@ -23,6 +23,18 @@ build_package () {
             exported_pkg=$(find $XIB_EXPORT -wholename "*/$name.xipkg" | head -1 | xargs realpath)
             if [ -f $exported_pkg ]; then
                 tar -h --no-overwrite-dir -xf $exported_pkg -C $XIB_CHROOT
+
+                postinstall="$XIB_CHROOT/var/lib/xipkg/postinstall"
+                if [ -d $postinstall ]; then
+                    for file in "$postinstall/*.sh"; do
+                        f=$(basename $file)
+                        chmod 755 $file
+                        xichroot "$XIB_CHROOT" "/var/lib/xipkg/postinstall/$f"
+                        rm $file
+                        printf "$PASS run postinstall for $f!\n"
+                    done
+                    rmdir $postinstall
+                fi
             fi
 
             printf "$PASS installed to chroot!\n"

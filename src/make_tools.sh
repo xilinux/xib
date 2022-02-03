@@ -1,9 +1,9 @@
 #!/bin/sh
 # A small script to generate the chroot environment where building will take place
 
-export WORKING_DIR="/var/xilinux/xib"
+export WORKING_DIR="/var/lib/xib"
 BUILDFILES_REPO_URL="https://xi.davidovski.xyz/git/buildfiles.git"
-export SYSTEM_DIR="$WORKING_DIR/system"
+export SYSTEM_DIR="$WORKING_DIR/chroot"
 
 TOOL_DIR="$SYSTEM_DIR/tools"
 SOURCES="$SYSTEM_DIR/sources"
