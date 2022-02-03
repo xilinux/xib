@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # A small script to generate the chroot environment where building will take place
 
 export MAKEFLAGS="-j$(grep "processor" /proc/cpuinfo | wc -l)"
