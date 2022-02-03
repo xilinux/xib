@@ -1,7 +1,8 @@
 #!/bin/sh
 
-export MAKEFLAGS="-j12"
+export MAKEFLAGS="-j$(grep "processor" /proc/cpuinfo | wc -l)"
 export LDFLAGS="-liconv"
+#export LDFLAGS=""
 
 export XIB_DIR="/var/lib/xib"
 export XIB_BUILDFILES="$XIB_DIR/buildfiles"

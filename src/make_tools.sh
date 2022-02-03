@@ -1,9 +1,10 @@
 #!/bin/sh
 # A small script to generate the chroot environment where building will take place
 
+export MAKEFLAGS="-j$(grep "processor" /proc/cpuinfo | wc -l)"
 export WORKING_DIR="/var/lib/xib"
 BUILDFILES_REPO_URL="https://xi.davidovski.xyz/git/buildfiles.git"
-export SYSTEM_DIR="$WORKING_DIR/chroot"
+export SYSTEM_DIR="$WORKING_DIR/xib-chroot"
 
 TOOL_DIR="$SYSTEM_DIR/tools"
 SOURCES="$SYSTEM_DIR/sources"
@@ -193,7 +194,7 @@ build_gcc1() {
         --enable-languages=c,c++
 
     make &&
-    make install 
+    make install || exit 1
     cd ..
     cat gcc/limitx.h gcc/glimits.h gcc/limity.h > \
         `dirname $($TGT-gcc -print-libgcc-file-name)`/install-tools/include/limits.h
@@ -495,6 +496,17 @@ build_gcc2() {
     ln -sv gcc $SYSTEM_DIR/usr/bin/cc
 }
 
+if [ -e $SYSTEM_DIR ]; then
+    printf "Remove existing system? [Y/n] "
+    read response
+
+    if [ "$response" != "n" ]; then
+        rm -rf $SYSTEM_DIR
+        echo "removed $SYSTEM_DIR"
+    fi
+fi
+
+
 mkdir -p "$SYSTEM_DIR"
 get_build_files
 parse_package_versions > "$SYSTEM_DIR/versions"
@@ -504,51 +516,86 @@ get_sources ${packages[@]}
 make_dir_struct $SYSTEM_DIR
 init_versions
 
-cd $SYSTEM_DIR; printf "\033[0;34mbuilding binutils1...\033[0m"
-build_binutils1 >> build.log && printf "passed" || exit 1 
-cd $SYSTEM_DIR; printf "\033[0;34mbuilding gcc1...\033[0m"
-build_gcc1 >> build.log && printf "passed" || exit 1 
-cd $SYSTEM_DIR; printf "\033[0;34mbuilding linux headers...\033[0m"
-build_linux_headers >> build.log && printf "\033[0;32mpassed" || exit 1 
-cd $SYSTEM_DIR; printf "\033[0;34mbuilding glibc...\033[0m"
-build_glibc >> build.log && printf "\033[0;32mpassed" || exit 1 
-cd $SYSTEM_DIR; printf "\033[0;34mbuilding libstdc++...\033[0m"
-build_libstdcxx >> build.log && printf "\033[0;32mpassed" || exit 1 
-cd $SYSTEM_DIR; printf "\033[0;34mbuilding m4...\033[0m"
-build_m4 && printf "\033[0;32mpassed" || exit 1 
-cd $SYSTEM_DIR; printf "\033[0;34mbuilding ncurses...\033[0m"
-build_ncurses >> build.log && printf "\033[0;32mpassed" || exit 1 
-cd $SYSTEM_DIR; printf "\033[0;34mbuilding bash...\033[0m"
-build_bash >> build.log && printf "\033[0;32mpassed" || exit 1 
-cd $SYSTEM_DIR; printf "\033[0;34mbuilding coreutils...\033[0m"
-build_coreutils >> build.log && printf "\033[0;32mpassed" || exit 1 
-cd $SYSTEM_DIR; printf "\033[0;34mbuilding diffutils...\033[0m"
-build_diffutils >> build.log && printf "\033[0;32mpassed" || exit 1
-cd $SYSTEM_DIR; printf "\033[0;34mbuilding file...\033[0m"
-build_file >> build.log && printf "\033[0;32mpassed" || exit 1 
-cd $SYSTEM_DIR; printf "\033[0;34mbuilding findutils...\033[0m"
-build_findutils >> build.log && printf "\033[0;32mpassed" || exit 1
-cd $SYSTEM_DIR; printf "\033[0;34mbuilding gawk...\033[0m"
-build_gawk >> build.log && printf "\033[0;32mpassed" || exit 1 
-cd $SYSTEM_DIR; printf "\033[0;34mbuilding grep...\033[0m"
-build_grep >> build.log && printf "\033[0;32mpassed" || exit 1
-cd $SYSTEM_DIR; printf "\033[0;34mbuilding gzip...\033[0m"
-build_gzip >> build.log && printf "\033[0;32mpassed" || exit 1
-cd $SYSTEM_DIR; printf "\033[0;34mbuilding make...\033[0m"
-build_make >> build.log && printf "\033[0;32mpassed" || exit 1
-cd $SYSTEM_DIR; printf "\033[0;34mbuilding patch...\033[0m"
-build_patch >> build.log && printf "\033[0;32mpassed" || exit 1
-cd $SYSTEM_DIR; printf "\033[0;34mbuilding sed...\033[0m"
-build_sed >> build.log && printf "\033[0;32mpassed" || exit 1
-cd $SYSTEM_DIR; printf "\033[0;34mbuilding tar...\033[0m"
-build_tar >> build.log && printf "\033[0;32mpassed" || exit 1
-cd $SYSTEM_DIR; printf "\033[0;34mbuilding xz...\033[0m"
-build_xz >> build.log && printf "\033[0;32mpassed" || exit 1
-cd $SYSTEM_DIR; printf "\033[0;34mbuilding binutils2...\033[0m"
-build_binutils2 >> build.log && printf "\033[0;32mpassed" || exit 1
-cd $SYSTEM_DIR; printf "\033[0;34mbuilding gcc2...\033[0m"
-build_gcc2 >> build.log && printf "\033[0;32mpassed" || exit 1
+reset_before_build () {
+    cd $SYSTEM_DIR; printf "\033[0;34mbuilding $1...\033[0m"
+}
 
-echo "DONE?"
+reset_before_build "binutils1"
+build_binutils1 &> binutils.build.log && printf "passed\n" || exit 1 
+
+reset_before_build "gcc1"
+build_gcc1 &> gcc1.build.log && printf "passed\n" || exit 1 
+
+reset_before_build "linux_headers"
+build_linux_headers &> linux-headers.build.log && printf "\033[0;32mpassed\n" || exit 1 
+
+reset_before_build "glibc"
+build_glibc &> glibc.build.log && printf "\033[0;32mpassed\n" || exit 1 
+
+reset_before_build "libstdcxx"
+build_libstdcxx &> libstdcxx.build.log && printf "\033[0;32mpassed\n" || exit 1 
+
+reset_before_build "m4"
+build_m4 && printf "\033[0;32mpassed\n" || exit 1 
+
+reset_before_build "ncurses"
+build_ncurses &> ncurses.build.log && printf "\033[0;32mpassed\n" || exit 1 
+
+reset_before_build "bash"
+build_bash &> bash.build.log && printf "\033[0;32mpassed\n" || exit 1 
+
+reset_before_build "coreutils"
+build_coreutils &> coreutils.build.log && printf "\033[0;32mpassed\n" || exit 1 
+
+reset_before_build "diffutils"
+build_diffutils &> diffutils.build.log && printf "\033[0;32mpassed\n" || exit 1
+
+reset_before_build "file"
+build_file &> file.build.log && printf "\033[0;32mpassed\n" || exit 1 
+
+reset_before_build "findutils"
+build_findutils &> findutils.build.log && printf "\033[0;32mpassed\n" || exit 1
+
+reset_before_build "gawk"
+build_gawk &> gawk.build.log && printf "\033[0;32mpassed\n" || exit 1 
+
+reset_before_build "grep"
+build_grep &> grep.build.log && printf "\033[0;32mpassed\n" || exit 1
+
+reset_before_build "gzip"
+build_gzip &> gzip.build.log && printf "\033[0;32mpassed\n" || exit 1
+
+reset_before_build "make"
+build_make &> make.build.log && printf "\033[0;32mpassed\n" || exit 1
+
+reset_before_build "patch"
+build_patch &> patch.build.log && printf "\033[0;32mpassed\n" || exit 1
+
+reset_before_build "sed"
+build_sed &> sed.build.log && printf "\033[0;32mpassed\n" || exit 1
+
+reset_before_build "tar"
+build_tar &> tar.build.log && printf "\033[0;32mpassed\n" || exit 1
+
+reset_before_build "xz"
+build_xz &> xz.build.log && printf "\033[0;32mpassed\n" || exit 1
+
+reset_before_build "binutils2"
+build_binutils2 &> bintuils2.build.log && printf "\033[0;32mpassed\n" || exit 1
+
+reset_before_build "gcc2"
+build_gcc2 &> gcc2.build.log && printf "\033[0;32mpassed\n" || exit 1
+
+
+echo "DONE"
+
+printf "Clean sources and logs? [Y/n]"
+read response
+
+if [ "$response" != "n" ]; then
+    rm -rf $SYSTEM_DIR/*.log
+    rm -rf $SYSTEM_DIR/sources
+    echo "removed $SYSTEM_DIR/sources"
+fi
 
 
