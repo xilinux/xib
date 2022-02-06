@@ -189,13 +189,6 @@ build () {
     printf "$BLUE\tPackaging package..." 
     package && printf "$GREEN packaged to $(du -sh "$XIB_EXPORT/repo/$REPO/$NAME.xipkg" | awk '{ print $1 }')!\n" || return 1
 
-    printf "$BLUE\tCreating package info..."
-    create_info && printf "$GREEN created info!\n" || return 1
-
-    # TODO check if the key exists, if not, skip signing
-    printf "$BLUE\tSigning package..."
-    sign && printf "$GREEN signed!\n" || return 1
-
     cp "$BUILDFILE" "$XIB_EXPORT/repo/$REPO/"
 }
 

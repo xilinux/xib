@@ -8,6 +8,7 @@ export XIB_CHROOT="$XIB_DIR/chroot"
 export XIB_EXPORT="$XIB_DIR/export"
 
 export PRIV_KEY="/home/david/.ssh/xi.pem"
+export PUB_KEY="/home/david/.ssh/xi.pub"
 export DEVELOPMENT_BUILDFILES="/home/david/docs/proj/xilinux/buildfiles"
 
 export BUILDFILES_GIT_REPO="https://xi.davidovski.xyz/git/buildfiles.git"
