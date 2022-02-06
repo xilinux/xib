@@ -18,6 +18,9 @@ export PATH=$SYSTEM_DIR/tools/bin:$PATH
 export CONFIG_SITE=$SYSTEM_DIR/usr/share/config.site
 export LC_ALL=POSIX
 
+set +h
+umask 022
+
 
 
 packages=(binutils gcc linux glibc mpfr gmp mpc m4 ncurses bash coreutils diffutils file findutils gawk grep gzip make patch sed tar xz)
@@ -475,6 +478,10 @@ build_gcc2() {
     cd $SOURCES/gcc/
 
     rm -rf build
+    rm -rf mpc gmp mpfr
+    [ -d mpfr ] || cp -r $SOURCES/mpfr mpfr
+    [ -d gmp ] || cp -r $SOURCES/gmp gmp
+    [ -d mpc ] || cp -r $SOURCES/mpc mpc
     mkdir -v build
     cd       build
 
@@ -547,55 +554,55 @@ reset_before_build "libstdcxx"
 build_libstdcxx &> libstdcxx.build.log && printf "\033[0;32mpassed\n" || exit 1 
 
 reset_before_build "m4"
-build_m4 &> m4.build.log && printf "\033[0;32mpassed\n" || exit 1 
+build_m4 &> m4.build.log && printf "\033[0;32mpassed\n" || printf "\0330;34mFAIL\n" 
 
 reset_before_build "ncurses"
-build_ncurses &> ncurses.build.log && printf "\033[0;32mpassed\n" || exit 1 
+build_ncurses &> ncurses.build.log && printf "\033[0;32mpassed\n" || printf "\0330;34mFAIL\n" 
 
 reset_before_build "bash"
-build_bash &> bash.build.log && printf "\033[0;32mpassed\n" || exit 1 
+build_bash &> bash.build.log && printf "\033[0;32mpassed\n" || printf "\0330;34mFAIL\n" 
 
 reset_before_build "coreutils"
-build_coreutils &> coreutils.build.log && printf "\033[0;32mpassed\n" || exit 1 
+build_coreutils &> coreutils.build.log && printf "\033[0;32mpassed\n" || printf "\0330;34mFAIL\n" 
 
 reset_before_build "diffutils"
-build_diffutils &> diffutils.build.log && printf "\033[0;32mpassed\n" || exit 1
+build_diffutils &> diffutils.build.log && printf "\033[0;32mpassed\n" || printf "\0330;34mFAIL\n"
 
 reset_before_build "file"
-build_file &> file.build.log && printf "\033[0;32mpassed\n" || exit 1 
+build_file &> file.build.log && printf "\033[0;32mpassed\n" || printf "\0330;34mFAIL\n" 
 
 reset_before_build "findutils"
-build_findutils &> findutils.build.log && printf "\033[0;32mpassed\n" || exit 1
+build_findutils &> findutils.build.log && printf "\033[0;32mpassed\n" || printf "\0330;34mFAIL\n"
 
 reset_before_build "gawk"
-build_gawk &> gawk.build.log && printf "\033[0;32mpassed\n" || exit 1 
+build_gawk &> gawk.build.log && printf "\033[0;32mpassed\n" || printf "\0330;34mFAIL\n" 
 
 reset_before_build "grep"
-build_grep &> grep.build.log && printf "\033[0;32mpassed\n" || exit 1
+build_grep &> grep.build.log && printf "\033[0;32mpassed\n" || printf "\0330;34mFAIL\n"
 
 reset_before_build "gzip"
-build_gzip &> gzip.build.log && printf "\033[0;32mpassed\n" || exit 1
+build_gzip &> gzip.build.log && printf "\033[0;32mpassed\n" || printf "\0330;34mFAIL\n"
 
 reset_before_build "make"
-build_make &> make.build.log && printf "\033[0;32mpassed\n" || exit 1
+build_make &> make.build.log && printf "\033[0;32mpassed\n" || printf "\0330;34mFAIL\n"
 
 reset_before_build "patch"
-build_patch &> patch.build.log && printf "\033[0;32mpassed\n" || exit 1
+build_patch &> patch.build.log && printf "\033[0;32mpassed\n" || printf "\0330;34mFAIL\n"
 
 reset_before_build "sed"
-build_sed &> sed.build.log && printf "\033[0;32mpassed\n" || exit 1
+build_sed &> sed.build.log && printf "\033[0;32mpassed\n" || printf "\0330;34mFAIL\n"
 
 reset_before_build "tar"
-build_tar &> tar.build.log && printf "\033[0;32mpassed\n" || exit 1
+build_tar &> tar.build.log && printf "\033[0;32mpassed\n" || printf "\0330;34mFAIL\n"
 
 reset_before_build "xz"
-build_xz &> xz.build.log && printf "\033[0;32mpassed\n" || exit 1
+build_xz &> xz.build.log && printf "\033[0;32mpassed\n" || printf "\0330;34mFAIL\n"
 
 reset_before_build "binutils2"
-build_binutils2 &> bintuils2.build.log && printf "\033[0;32mpassed\n" || exit 1
+build_binutils2 &> bintuils2.build.log && printf "\033[0;32mpassed\n" || printf "\0330;34mFAIL\n"
 
 reset_before_build "gcc2"
-build_gcc2 &> gcc2.build.log && printf "\033[0;32mpassed\n" || exit 1
+build_gcc2 &> gcc2.build.log && printf "\033[0;32mpassed\n" || printf "\0330;34mFAIL\n"
 
 
 echo "DONE"

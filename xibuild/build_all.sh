@@ -6,8 +6,6 @@ PASS="\033[0;32m"
 NEUTRAL="\033[0;33m"
 RESET="\033[0m"
 
-source prepare_environment.sh
-
 build_package () {
     name=$(echo $line | cut -d"+" -f1)
     buildfile=$(find $XIB_BUILDFILES -wholename "*/$name.xibuild" | head -1)
@@ -63,11 +61,13 @@ build_all () {
 }
 
 if build_all; then 
-    printf "$PASSBuilt all packages!"
+    printf "\n${PASS}Built all packages!"
+    exit 0
 else
     printf "$ERROR Something went wrong!$NEUTRAL Press enter to view recent log"
     read;
 
     f=$(ls -1 --sort time $XIB_EXPORT/repo/*/*.log | head -1 | xargs realpath)
     less $f
+    exit 1
 fi

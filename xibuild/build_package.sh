@@ -33,7 +33,7 @@ package_exists () {
     local exported_pkg_info="$exported.xipkg.info"
     local exported_pkg_build="$exported.xibuild"
 
-    if [ -f $exported_pkg ] && [ -f $exported_pkg_info ] && [ -f $exported_pkg_build ]; then
+    if [ -f $exported_pkg ] && [ -f $exported_pkg_build ]; then
         local built_sum=$(md5sum $exported_pkg_build | cut -d" " -f1)
         local current_sum=$(md5sum $BUILDFILE | cut -d" " -f1)
         
@@ -166,29 +166,6 @@ package () {
         [ -z "${SOURCE}" ] || exit 1;
     fi
     tar -C $pkg_dest -czf $export_pkg ./
-}
-
-create_info () {
-    local export_pkg="$XIB_EXPORT/repo/$REPO/$NAME.xipkg"
-    local pkg_info="$export_pkg.info"
-
-    echo "" > $pkg_info 
-    echo "NAME=$NAME" >> $pkg_info
-    echo "DESCRIPTION=$DESC" >> $pkg_info
-    echo "PKG_FILE=$NAME.xipkg" >> $pkg_info
-    echo "CHECKSUM=$(md5sum $export_pkg | awk '{ print $1 }')" >> $pkg_info
-    echo "SOURCE=$SOURCE" >> $pkg_info
-    echo "DATE=$(date)" >> $pkg_info
-    echo "DEPS=(${DEPS[*]})" >> $pkg_info
-}
-
-sign () {
-    local export_pkg="$XIB_EXPORT/repo/$REPO/$NAME.xipkg"
-    local pkg_info="$export_pkg.info"
-
-    echo "SIGNATURE=" >> $pkg_info
-    openssl dgst -sign $PRIV_KEY $export_pkg >> $pkg_info
-
 }
 
 build () {
