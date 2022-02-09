@@ -6,6 +6,37 @@ PASS="\033[0;32m"
 NEUTRAL="\033[0;33m"
 RESET="\033[0m"
 
+install_package () {
+    local exported_pkg=$(find $XIB_EXPORT -wholename "*/$1.xipkg" | head -1 | xargs realpath)
+    if [ -f $exported_pkg ]; then
+        local checksum=$(md5sum $exported_pkg)
+
+        local installed_list="$XIB_CHROOT/installed"
+        [ -f $installed_list ] || touch $installed_list
+
+        if grep -q "^$checksum$" $installed_list; then
+            echo $checksum >> $installed_list
+
+            tar -h --no-overwrite-dir -xf $exported_pkg -C $XIB_CHROOT
+
+            postinstall="$XIB_CHROOT/var/lib/xipkg/postinstall"
+            if [ -d $postinstall ]; then
+                for file in "$postinstall/*.sh"; do
+                    f=$(basename $file)
+                    chmod 755 $file
+                    xichroot "$XIB_CHROOT" "/var/lib/xipkg/postinstall/$f"
+                    rm $file
+                    printf "$PASS run postinstall for $f!\n"
+                done
+                rmdir $postinstall
+            fi
+            printf "$PASS installed to chroot!\n"
+        else
+            printf "$RESET already installed!\n"
+        fi
+    fi
+}
+
 build_package () {
     name=$(echo $line | cut -d"+" -f1)
     buildfile=$(find $XIB_BUILDFILES -wholename "*/$name.xibuild" | head -1)
@@ -18,24 +49,7 @@ build_package () {
         # Install the package if it is needed for other builds
         if echo $line | grep -q '+'; then
             printf "$INFO\tInstalling..." 
-            exported_pkg=$(find $XIB_EXPORT -wholename "*/$name.xipkg" | head -1 | xargs realpath)
-            if [ -f $exported_pkg ]; then
-                tar -h --no-overwrite-dir -xf $exported_pkg -C $XIB_CHROOT
-
-                postinstall="$XIB_CHROOT/var/lib/xipkg/postinstall"
-                if [ -d $postinstall ]; then
-                    for file in "$postinstall/*.sh"; do
-                        f=$(basename $file)
-                        chmod 755 $file
-                        xichroot "$XIB_CHROOT" "/var/lib/xipkg/postinstall/$f"
-                        rm $file
-                        printf "$PASS run postinstall for $f!\n"
-                    done
-                    rmdir $postinstall
-                fi
-            fi
-
-            printf "$PASS installed to chroot!\n"
+            install_package $name
         fi
 
         printf $RESET
