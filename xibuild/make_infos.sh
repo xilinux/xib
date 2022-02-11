@@ -60,6 +60,4 @@ for pkg in $(ls "$XIB_EXPORT"/repo/*/*.xipkg); do
         sign $pkg >> $info_file
         list_line $pkg >> "$XIB_EXPORT"/repo/$repo/packages.list
         echo "Enlisted $name to $info_file"
-
-
 done

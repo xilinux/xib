@@ -24,12 +24,11 @@ run_postinstall () {
         done
         rmdir $postinstall
     fi
-
 }
 
 # install a single package if it is present
 # 
-# $1: the exported .xipkg file
+# arg: the exported .xipkg file
 #
 install_package () {
     printf "${INFO}${TABCHAR}install " 
