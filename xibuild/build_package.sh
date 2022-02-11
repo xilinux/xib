@@ -7,8 +7,9 @@ BUILDFILE=$1
 REPO=$(echo $BUILDFILE | rev | cut -d/ -f2 | rev)
 NAME=$(basename $BUILDFILE .xibuild)
 
-source $BUILDFILE
 
+# extract an archive using its appropriate tool
+#
 extract () {
     FILE=$1
     case "${FILE##*.}" in 
@@ -27,6 +28,8 @@ extract () {
     esac
 }
 
+# check if the package we want to build already exists, comparing hashes of the build file
+#
 package_exists () {
     local exported="$XIB_EXPORT/repo/$REPO/$NAME"
     local exported_pkg="$exported.xipkg"
@@ -45,8 +48,9 @@ package_exists () {
     return 1
 }
 
+# downloads the source and any additional files
+#
 fetch_source () {
-    # download additional files
     local src_dir="$XIB_CHROOT/build/source"
     mkdir -p $src_dir
 
@@ -55,11 +59,11 @@ fetch_source () {
     if [ ! -z ${SOURCE} ]; then
 
         if git ls-remote -q $SOURCE $BRANCH &> /dev/null; then
-            # The source is a git repo
+            # the source is a git repo
             git clone $SOURCE . &> /dev/null
             git checkout $BRANCH &> /dev/null
         else
-            # The source is a file
+            # otherwise the source is a file
 
             local downloaded_file=$(basename $SOURCE)
             curl -SsL $SOURCE > $downloaded_file
@@ -83,7 +87,8 @@ fetch_source () {
     fi
 }
 
-
+# removes any unecessary files from the chroot, from previous builds
+#
 clean_chroot () {
     local export_dir="$XIB_CHROOT/export"
     local build_dir="$XIB_CHROOT/build"
@@ -97,8 +102,18 @@ clean_chroot () {
     mkdir -p "$XIB_EXPORT/repo/$REPO/"
 }
 
+prepare_build_env () {
+    clean_chroot
+
+    cp "$BUILDFILE" "$XIB_CHROOT/build/"
+    printf $NAME > "$XIB_CHROOT/build/name"
+}
+
+# generate the script that will be used to build the xibuild
+#
 make_buildscript () {
 
+    # TODO this should be an external buildprofile file
     echo MAKEFLAGS="$MAKEFLAGS" >> "$XIB_CHROOT/build/profile"
     echo LDFLAGS="$LDFLAGS" >> "$XIB_CHROOT/build/profile"
 
@@ -155,44 +170,66 @@ EOF
     chmod 700 "$XIB_CHROOT/build/build.sh"
 }
 
-package () {
+# package the dest files into a xipkg
+#
+package_dest () {
     local export_repo="$XIB_EXPORT/repo/$REPO"
     local export_pkg="$XIB_EXPORT/repo/$REPO/$NAME.xipkg"
     local pkg_dest="$XIB_CHROOT/export"
 
     cd "$pkg_dest"
+
+    # ensure that the package actually exists
     if [ "$(ls -1 | wc -l)" = "0" ]; then
         printf " package is empty;"
         [ -z "${SOURCE}" ] || exit 1;
     fi
+
     tar -C $pkg_dest -czf $export_pkg ./
-}
 
-build () {
-    printf "$BLUE\tCleaning chroot..." 
-    clean_chroot && printf "$GREEN prepared\n" || return 1
-
-    printf "$BLUE\tfetching source..." 
-    fetch_source && printf "$GREEN fetched $(du -sh "$XIB_CHROOT/build/source" | awk '{ print $1 }')\n" || return 1
-
-    printf "$BLUE\tgenerating buildscript..." 
-    make_buildscript && printf "$GREEN generated\n" || return 1
-
-    cp "$BUILDFILE" "$XIB_CHROOT/build/"
-    printf $NAME > "$XIB_CHROOT/build/name"
-
-    local log_file="$XIB_EXPORT/repo/$REPO/$NAME.log"
-
-    printf "$BLUE\tBuilding package..." 
-    xichroot $XIB_CHROOT /build/build.sh &> $log_file && printf "$GREEN built!\n" || return 1
-
-    printf "$BLUE\tPackaging package..." 
-    package && printf "$GREEN packaged to $(du -sh "$XIB_EXPORT/repo/$REPO/$NAME.xipkg" | awk '{ print $1 }')!\n" || return 1
-
+    # export the buildfile
     cp "$BUILDFILE" "$XIB_EXPORT/repo/$REPO/"
 }
 
-[ -z "${XIB_CHROOT}" ] && echo "CRITICAL! No chroot env variable set!" && exit 1;
+# build the package
+#
+build () {
+    local log_file="$XIB_EXPORT/repo/$REPO/$NAME.log"
 
-package_exists && printf "\tPackage exists!\n" || build
+    printf "${BLUE}${TABCHAR}prepare " 
+        prepare_build_env || return 1
+    printf "${GREEN}${CHECKMARK}\n"
+
+    printf "${BLUE}${TABCHAR}fetch " 
+        fetch_source || return 1
+    printf "${GREEN}${CHECKMARK}${RESET}${INFOCHAR}$(du -sh "$XIB_CHROOT/build/source" | awk '{ print $1 }')\n"
+
+    printf "${BLUE}${TABCHAR}generate "
+        make_buildscript || return 1
+    printf "${GREEN}${CHECKMARK}\n"
+
+    printf "${BLUE}${TABCHAR}build " 
+        xichroot $XIB_CHROOT /build/build.sh &> $log_file || return 1
+    printf "${GREEN}${CHECKMARK}\n"
+
+    printf "${BLUE}${TABCHAR}package "
+        package_dest || return 1
+    printf "${GREEN}${CHECKMARK}${RESET}${INFOCHAR}$(du -sh "$XIB_EXPORT/repo/$REPO/$NAME.xipkg" | awk '{ print $1 }')!\n" 
+
+    # export the buildfile
+}
+
+#
+# IMPORTANT
+#
+# this script will attempt to build the package in a suitable chroot environment
+# if one is not specified then unwanted consequences can occur
+# using XIB_CHROOT=/ could be a possbility but be aware of the risks
+#
+[ -z "${XIB_CHROOT}" ] && echo "${RED}CRITICAL! ${RESET}No chroot env variable set!" && exit 1;
+
+# import all of the functions and constants in the build file, so we know what to do
+source $BUILDFILE
+
+package_exists || build
 
