@@ -41,14 +41,23 @@ list_line() {
 }
 
 
-for repo in $(ls -d "$XIB_EXPORT"/repo/*); do
+list=$(ls -d "$XIB_EXPORT"/repo/*)
+total=$(echo $list | wc -w)
+i=0
+for repo in $list; do
     file="$repo/packages.list"
     [ -e $file ] && rm $file
     touch $file
-    echo "Removed old package lists in $repo"
-done
 
-for pkg in $(ls "$XIB_EXPORT"/repo/*/*.xipkg); do
+    hbar -T "removing old repos" $i $total
+    i=$((i+1))
+done
+hbar -t -T "removing old repos" $i $total
+
+list=$(ls "$XIB_EXPORT"/repo/*/*.xipkg)
+total=$(echo $list | wc -w)
+i=0
+for pkg in $list; do
         name=$(basename -s ".xipkg" $pkg)
         repo=$(echo $pkg | rev | cut -d/ -f2 | rev)
         info_file="$XIB_EXPORT/repo/$repo/$name.xipkg.info"
@@ -59,5 +68,9 @@ for pkg in $(ls "$XIB_EXPORT"/repo/*/*.xipkg); do
         get_info $pkg > $info_file
         sign $pkg >> $info_file
         list_line $pkg >> "$XIB_EXPORT"/repo/$repo/packages.list
-        echo "Enlisted $name to $info_file"
+
+        hbar -T "generating info" $i $total
+        i=$((i+1))
 done
+hbar -t -T "generating info" $i $total
+printf "${INFO}Created $i info files!\n"

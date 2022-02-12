@@ -80,7 +80,7 @@ build_all () {
 
 
 if build_all; then 
-    printf "\n${PASS}Built all packages!"
+    printf "\n${PASS}Built all packages!\n${RESET}"
     exit 0
 else
     printf "${ERROR} Something went wrong!${NEUTRAL} Press enter to view recent log"
