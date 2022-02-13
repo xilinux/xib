@@ -63,10 +63,12 @@ for pkg in $list; do
         info_file="$XIB_EXPORT/repo/$repo/$name.xipkg.info"
         build_file="$XIB_EXPORT/repo/$repo/$name.xibuild"
 
-        source $build_file
+        if [ ! -f $info_file ]; then
+            source $build_file
 
-        get_info $pkg > $info_file
-        sign $pkg >> $info_file
+            get_info $pkg > $info_file
+            sign $pkg >> $info_file
+        fi
         list_line $pkg >> "$XIB_EXPORT"/repo/$repo/packages.list
 
         hbar -T "generating info" $i $total
