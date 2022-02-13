@@ -37,7 +37,15 @@ list_line() {
     local checksum=$(md5sum $pkg_file | awk '{ print $1 }')
     local size=$(du -s $pkg_file | awk '{print $1}')
 
-    echo $name.xipkg $checksum $size $filecount
+    echo $name.xipkg $checksum $size $filecount 
+}
+
+list_deps() {
+    local info_file=$1
+    local deps=$(grep -a "^DEPS=(" $info_file | sed -rn "s/DEPS=\((.*)\)/\1/p")
+    local name=$(basename -s ".xipkg.info" $info_file)
+
+    echo "$name: $deps"
 }
 
 
@@ -54,6 +62,9 @@ for repo in $list; do
 done
 hbar -t -T "removing old repos" $i $total
 
+graph_file="$XIB_EXPORT"/repo/deps.graph
+[ -f $graph_file ] && rm $graph_file
+
 list=$(ls "$XIB_EXPORT"/repo/*/*.xipkg)
 total=$(echo $list | wc -w)
 i=0
@@ -63,16 +74,17 @@ for pkg in $list; do
         info_file="$XIB_EXPORT/repo/$repo/$name.xipkg.info"
         build_file="$XIB_EXPORT/repo/$repo/$name.xibuild"
 
-        if [ ! -f $info_file ]; then
-            source $build_file
+        source $build_file
 
-            get_info $pkg > $info_file
-            sign $pkg >> $info_file
-        fi
+        get_info $pkg > $info_file
+        sign $pkg >> $info_file
         list_line $pkg >> "$XIB_EXPORT"/repo/$repo/packages.list
+        [ -f $info_file ] && list_deps $info_file >> $graph_file
 
         hbar -T "generating info" $i $total
         i=$((i+1))
 done
 hbar -t -T "generating info" $i $total
 printf "${INFO}Created $i info files!\n"
+
+
