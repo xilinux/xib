@@ -193,7 +193,7 @@ package_dest () {
 
 # build the package
 #
-build () {
+build_pkg () {
     local log_file="$XIB_EXPORT/repo/$REPO/$NAME.log"
 
     printf "${BLUE}${TABCHAR}prepare " 
@@ -231,5 +231,5 @@ build () {
 # import all of the functions and constants in the build file, so we know what to do
 source $BUILDFILE
 
-package_exists || build
+package_exists || build_pkg
 
