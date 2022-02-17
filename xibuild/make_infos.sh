@@ -25,7 +25,9 @@ get_info() {
 }
 
 sign () {
-    echo "SIGNATURE="
+    printf "SIGNATURE="
+    openssl dgst -sign $PRIV_KEY $1 | base64 | tr '\n' ' '
+    printf "\n"
     openssl dgst -sign $PRIV_KEY $1
 }
 
@@ -35,7 +37,7 @@ list_line() {
     local name=$(basename -s ".xipkg" $pkg_file)
     local filecount=$(gzip -cd $pkg_file | tar -tvv | grep -c ^-)
     local checksum=$(md5sum $pkg_file | awk '{ print $1 }')
-    local size=$(du -s $pkg_file | awk '{print $1}')
+    local size=$(stat -c %s $pkg_file)
 
     echo $name.xipkg $checksum $size $filecount 
 }
