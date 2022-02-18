@@ -17,3 +17,5 @@ fi
 [ -f $INSTALLED_PACKAGES ] || touch $INSTALLED_PACKAGES
 
 [ -f $XIB_CHROOT/etc/resolv.conf ] || cp /etc/resolv.conf $XIB_CHROOT/etc/resolv.conf
+
+cp build_profile $BUILD_PROFILE

@@ -1,0 +1,4 @@
+export MAKEFLAGS="-j$(grep "processor" /proc/cpuinfo | wc -l)"
+export XORG_PREFIX="/usr"
+
+export XORG_CONFIG="--prefix=/usr --sysconfdir=/etc --localstatedir=/var --disable-static"

@@ -17,3 +17,4 @@ export DEVELOPMENT_BUILDFILES="/home/david/docs/proj/xilinux/buildfiles"
 export BUILDFILES_GIT_REPO="https://xi.davidovski.xyz/git/buildfiles.git"
 export INSTALLED_PACKAGES="$XIB_CHROOT/installed"
 
+export BUILD_PROFILE=$XIB_DIR/build_profile

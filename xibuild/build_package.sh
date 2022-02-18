@@ -113,10 +113,7 @@ prepare_build_env () {
 #
 make_buildscript () {
 
-    # TODO this should be an external buildprofile file
-    echo MAKEFLAGS="$MAKEFLAGS" >> "$XIB_CHROOT/build/profile"
-    echo LDFLAGS="$LDFLAGS" >> "$XIB_CHROOT/build/profile"
-
+    cat $BUILD_PROFILE > "$XIB_CHROOT/build/profile"
     cat > "$XIB_CHROOT/build/build.sh" << "EOF"
 #!/bin/bash
 source /build/profile
