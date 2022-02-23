@@ -38,7 +38,7 @@ sub list_dependencies{
     open (my $fh, "<", $file) or warn "Cannot open $file";
 
     while (my $line = <$fh>) {
-        if ($line =~ /DEPS=\((.+)\)/) {
+        if ($line =~ /DEPS="(.+)"/) {
             my @words = split(/ /, $1);
             push(@deps, @words);
         }

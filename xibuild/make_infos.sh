@@ -1,8 +1,8 @@
-#!/bin/bash
+#!/bin/sh
 
 
 # TODO remember to update this if there are ever changes
-XIPKG_INFO_VERSION='02'
+XIPKG_INFO_VERSION='03'
 
 get_info() {
         local name=$(basename -s ".xipkg" $1)
@@ -20,8 +20,8 @@ get_info() {
         echo "VERSION=$pkg_ver"
         echo "SOURCE=$SOURCE"
         echo "DATE=$(date -r $1)"
-        echo "DEPS=(${DEPS[*]})"
-        echo "MAKE_DEPS=(${MAKE_DEPS[*]})"
+        echo "DEPS=${DEPS}"
+        echo "MAKE_DEPS=${MAKE_DEPS}"
 }
 
 sign () {
@@ -44,7 +44,7 @@ list_line() {
 
 list_deps() {
     local info_file=$1
-    local deps=$(grep -a "^DEPS=(" $info_file | sed -rn "s/DEPS=\((.*)\)/\1/p")
+    local deps=$(grep -a "^DEPS=\"" $info_file | sed -rn "s/DEPS=\"(.*)\"/\1/p")
     local name=$(basename -s ".xipkg.info" $info_file)
 
     echo "$name: $deps"

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 GREEN="\033[0;32m"
 BLUE="\033[0;34m"
@@ -78,9 +78,10 @@ fetch_source () {
         fi
     fi
 
+    set -- ${ADDITIONAL}
     # download additional files
-    if [ ! -z ${ADDITIONAL} ]; then
-        for url in ${ADDITIONAL[*]}; do
+    if [ "$#" != 0 ]; then
+        for url in $@; do
             local name=$(basename $url)
             curl -SsL $url > $src_dir/$name 
         done

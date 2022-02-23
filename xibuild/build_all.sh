@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 ERROR="\033[0;31m"
 INFO="\033[0;34m"
@@ -32,17 +32,7 @@ run_postinstall () {
 #
 install_package () {
     printf "${INFO}${TABCHAR}install " 
-    local checksum=$(md5sum $1 | cut -d' ' -f1)
-
-    if grep -q "^${checksum}$" $INSTALLED_PACKAGES; then
-        printf "${RESET}${CHECKMARK}\n"
-    else
-        tar -h --no-overwrite-dir -xf $1 -C $XIB_CHROOT
-        echo $checksum >> $INSTALLED_PACKAGES
-
-        printf "${PASS}${CHECKMARK}\n"
-        return 0
-    fi
+    xi -nyulq -r ${XIB_CHROOT} install $1 >> printf "${PASS}${CHECKMARK}\n"
 }
 
 # build a package by its name

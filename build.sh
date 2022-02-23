@@ -1,6 +1,6 @@
-#!/bin/bash
+#!/bin/sh
 
-source xib_env
+. ./xib_env
 
 cd xibuild
 ./prepare.sh  
