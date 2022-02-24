@@ -58,10 +58,10 @@ fetch_source () {
 
     if [ ! -z ${SOURCE} ]; then
 
-        if git ls-remote -q $SOURCE $BRANCH &> /dev/null; then
+        if git ls-remote -q $SOURCE $BRANCH 2>/dev/null; then
             # the source is a git repo
-            git clone $SOURCE . &> /dev/null
-            git checkout $BRANCH &> /dev/null
+            git clone $SOURCE . 2>/dev/null
+            git checkout $BRANCH 2>/dev/null
         else
             # otherwise the source is a file
 
@@ -116,8 +116,8 @@ make_buildscript () {
 
     cat $BUILD_PROFILE > "$XIB_CHROOT/build/profile"
     cat > "$XIB_CHROOT/build/build.sh" << "EOF"
-#!/bin/bash
-source /build/profile
+#!/bin/sh
+. /build/profile
 export PKG_NAME=$(cat /build/name)
 export PKG_DEST=/export
 
@@ -139,7 +139,7 @@ package () {
 
 cd /build
 ls
-source $PKG_NAME.xibuild
+. ./$PKG_NAME.xibuild
 cd /build/source
 
 echo "==========================PREPARE STAGE=========================="
@@ -207,7 +207,7 @@ build_pkg () {
     printf "${GREEN}${CHECKMARK}\n"
 
     printf "${BLUE}${TABCHAR}build " 
-        xichroot $XIB_CHROOT /build/build.sh &> $log_file || return 1
+        xichroot $XIB_CHROOT /build/build.sh > $log_file 2>&1 || return 1
     printf "${GREEN}${CHECKMARK}\n"
 
     printf "${BLUE}${TABCHAR}package "
@@ -227,7 +227,7 @@ build_pkg () {
 [ -z "${XIB_CHROOT}" ] && echo "${RED}CRITICAL! ${RESET}No chroot env variable set!" && exit 1;
 
 # import all of the functions and constants in the build file, so we know what to do
-source $BUILDFILE
+. $BUILDFILE
 
 package_exists || build_pkg
 

@@ -32,7 +32,7 @@ run_postinstall () {
 #
 install_package () {
     printf "${INFO}${TABCHAR}install " 
-    xi -nyulq -r ${XIB_CHROOT} install $1 >> printf "${PASS}${CHECKMARK}\n"
+    xi -nyulq -r ${XIB_CHROOT} install $1 && printf "${PASS}${CHECKMARK}\n"
 }
 
 # build a package by its name
@@ -74,7 +74,7 @@ if build_all; then
     exit 0
 else
     printf "${ERROR} Something went wrong!${NEUTRAL} Press enter to view recent log"
-    read;
+    read out;
 
     less $(ls -1 --sort time $XIB_EXPORT/repo/*/*.log | head -1 | xargs realpath)
     exit 1

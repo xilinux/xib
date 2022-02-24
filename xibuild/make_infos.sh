@@ -76,7 +76,7 @@ for pkg in $list; do
         info_file="$XIB_EXPORT/repo/$repo/$name.xipkg.info"
         build_file="$XIB_EXPORT/repo/$repo/$name.xibuild"
 
-        source $build_file
+        . $build_file
 
         get_info $pkg > $info_file
         sign $pkg >> $info_file
