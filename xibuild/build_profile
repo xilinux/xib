@@ -1,3 +1,6 @@
+export HOME=/root
+export PATH=/bin:/usr/bin:/sbin:/usr/sbin:/tools/bin
+
 export MAKEFLAGS="-j$(grep "processor" /proc/cpuinfo | wc -l)"
 export XORG_PREFIX="/usr"
 
