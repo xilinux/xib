@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 
 ## VERSIONS ##
@@ -48,12 +48,13 @@ CPU=x86-64
 
 CROSS_TOOLS=/cross-tools
 TOOLS=/tools
+chroot=$(pwd)/chroot
 
 PATH=${TOOLS}/bin:${CROSS_TOOLS}/bin:/usr/bin
 
 MAKEFLAGS="-j$(nproc)"
 
-export CHROOT TARGET PATH WD CURL_OPTS CROSS_TOOLS TOOLS MAKEFLAGS
+export chroot TARGET PATH WD CURL_OPTS CROSS_TOOLS TOOLS MAKEFLAGS
 
 unset CFLAGS CXXFLAGS
 
@@ -63,6 +64,7 @@ die () {
 }
 
 extract () {
+    echo "extracting $1"
     FILE=$1
     case "${FILE##*.}" in 
         "gz" )
@@ -73,6 +75,9 @@ extract () {
             ;;
         "zip" )
             unzip $FILE
+            ;;
+        "xz" )
+            tar -xf $FILE
             ;;
         * )
             tar -xf $FILE
@@ -87,6 +92,7 @@ src () {
     printf "${LIGHT_BLUE}Fetching $filename...${RESET}\n"
 
     curl ${CURL_OPTS} $source > $filename
+    file $filename
     extract $filename
     cd ${filename%.t*}
 }
@@ -103,6 +109,38 @@ ptch () {
 clean () {
     rm -rf $WD $CROSS_TOOLS $TOOLS
     mkdir -pv $WD $CROSS_TOOLS $TOOL
+}
+
+mount_chroot () {
+    mkdir -p $chroot/{dev,proc,sys,run}
+    mknod -m 600 $chroot/dev/console c 5 1
+    mknod -m 666 $chroot/dev/null c 1 3
+
+    mount --bind /dev $chroot/dev
+    mount -t devpts devpts $chroot/dev/pts -o gid=5,mode=620
+    mount -t proc proc $chroot/proc
+    mount -t sysfs sysfs $chroot/sys
+    mount -t tmpfs tmpfs $chroot/run
+    if [ -h $chroot/dev/shm ]; then
+      mkdir -p $chroot/$(readlink $chroot/dev/shm)
+    fi
+}
+
+umount_chroot () {
+    umount $chroot/dev/pts
+    umount $chroot/dev
+    umount $chroot/run
+    umount $chroot/proc
+    umount $chroot/sys
+}
+
+tchroot () {
+    chroot "$chroot" /tools/bin/env -i \
+    HOME=/root                  \
+    TERM="$TERM"                \
+    PS1='(chroot) \u:\w\$ ' \
+    PATH=/bin:/usr/bin:/sbin:/usr/sbin:/tools/bin \
+    $@
 }
 
 patch_gcc () {
@@ -145,41 +183,106 @@ patch_gcc () {
     #ptch $PATCH_SRC/0022-DP-Use-push-state-pop-state-for-gold-as-well-when-li.patch &&
 }
 
+create_chroot () {
+    PATH=/usr/bin:/bin
+    mkdir chroot
+    xi -l -r ${chroot} bootstrap
+    echo "copying tools..."
+    mkdir ${chroot}/tools
+    cp -r ${TOOLS} ${chroot}/
+
+    echo "making essential links"
+
+    ln -s /tools/bin/bash ${chroot}/bin
+    ln -s /tools/bin/cat ${chroot}/bin
+    ln -s /tools/bin/dd ${chroot}/bin
+    ln -s /tools/bin/echo ${chroot}/bin
+    ln -s /tools/bin/ln ${chroot}/bin
+    ln -s /tools/bin/pwd ${chroot}/bin
+    ln -s /tools/bin/rm ${chroot}/bin
+    ln -s /tools/bin/stty ${chroot}/bin
+    ln -s /tools/bin/install ${chroot}/bin
+    ln -s /tools/bin/env ${chroot}/bin
+    #ln -s /tools/bin/perl ${chroot}/bin
+
+    ln -s /tools/lib/libgcc_s.so.1 ${chroot}/usr/lib
+    ln -s /tools/lib/libgcc_s.so ${chroot}/usr/lib
+
+    ln -s /tools/lib/libstdc++.a ${chroot}/usr/lib
+    ln -s /tools/lib/libstdc++.so ${chroot}/usr/lib
+    ln -s /tools/lib/libstdc++.so.6 ${chroot}/usr/lib
+    ln -s bash ${chroot}/bin/sh 
+
+    mkdir -p ${chroot}/etc
+    ln -s /proc/self/mounts ${chroot}/etc/mtab
+
+    cat > ${chroot}/etc/passwd << "EOF"
+root:x:0:0:root:/root:/bin/bash
+daemon:x:6:6:Daemon User:/dev/null:/bin/false
+messagebus:x:18:18:D-Bus Message Daemon User:/var/run/dbus:/bin/false
+nobody:x:99:99:Unprivileged User:/dev/null:/bin/false
+EOF
+
+    cat > ${chroot}/etc/group << "EOF"
+root:x:0:
+sys:x:2:
+kmem:x:3:
+tape:x:4:
+tty:x:5:
+daemon:x:6:
+floppy:x:7:
+disk:x:8:
+lp:x:9:
+dialout:x:10:
+audio:x:11:
+video:x:12:
+utmp:x:13:
+usb:x:14:
+cdrom:x:15:
+adm:x:16:
+messagebus:x:18:
+input:x:24:
+mail:x:34:
+nogroup:x:99:
+users:x:999:
+EOF
+
+    echo "Created chroot"
+}
+
 package_chroot () {
     PATH=/usr/bin:/bin
-    local chroot=$(pwd)/chroot
-    mkdir chroot
-    xi -r ${chroot} bootstrap
-    cp -r ${TOOLS} ${chroot}/tools
-    ln -s /tools/bin/bash ${chroot}/bin/sh
+    echo "compressing..."
+    echo ${chroot}
     tar -C ${chroot} -czf chroot-tools.tar.gz ./
+    echo "created chroot-tools.tar.gz..."
 }
 
 [ -f /usr/lib/colors.sh ] && . /usr/lib/colors.sh
 
 rm -rf $WD ; mkdir $WD
 
-# TODO bad impl
-if [ "$#" = "0" ]; then
-    clean
-    $0 stage1
-    $0 stage2
-else
-    case "$1" in
-        stage1|cross|cross_tools)
-            . ./cross_tools.sh
-            ;;
-        stage2|tools|toolchain)
-            . ./toolchain.sh
-            ;;
-        package)
-                package_chroot
-            ;;
-        *)
-            clean
-            $0 stage1
-            $0 stage2
-            ;;
-    esac
-fi
+case "$1" in
+    stage1|cross|cross_tools)
+        . ./stage1.sh
+        ;;
+    stage2|tools|toolchain)
+        . ./stage2.sh
+        ;;
+    stage3)
+        . ./stage3.sh
+        ;;
+    package)
+        umount_chroot
+        package_chroot
+        ;;
+    *)
+        clean
+        $0 stage1
+        $0 stage2
+        $0 stage3
+        umount_chroot
+        package_chroot
+        ;;
+esac
 

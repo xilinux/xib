@@ -68,7 +68,6 @@ build_all () {
     done
 }
 
-
 if build_all; then 
     printf "\n${PASS}Built all packages!\n${RESET}"
     exit 0

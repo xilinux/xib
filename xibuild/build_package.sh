@@ -58,10 +58,10 @@ fetch_source () {
 
     if [ ! -z ${SOURCE} ]; then
 
-        if git ls-remote -q $SOURCE $BRANCH 2>/dev/null; then
+        if git ls-remote -q $SOURCE $BRANCH > /dev/null 2>&1; then
             # the source is a git repo
-            git clone $SOURCE . 2>/dev/null
-            git checkout $BRANCH 2>/dev/null
+            git clone $SOURCE . > /dev/null 2>&1
+            git checkout $BRANCH > /dev/null 2>&1
         else
             # otherwise the source is a file
 
