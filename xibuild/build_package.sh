@@ -158,8 +158,9 @@ if command -v postinstall > /dev/null; then
     if [ ${#POSTINSTALL} != 0 ]; then
         POST_DIR=$PKG_DEST/var/lib/xipkg/postinstall
         mkdir -p $POST_DIR
-        echo "#!/bin/sh" > $POST_DIR/$PKG_NAME.sh
-        echo $POSTINSTALL >> $POST_DIR/$PKG_NAME.sh
+        cat /build/$PKG_NAME.xibuild > $POST_DIR/$PKG_NAME.sh
+        echo "" >> $POST_DIR/$PKG_NAME.sh
+        echo "postinstall" >> $POST_DIR/$PKG_NAME.sh
     fi
 else
     echo "no postinstall"

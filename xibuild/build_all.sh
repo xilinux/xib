@@ -6,6 +6,9 @@ PASS="\033[0;32m"
 NEUTRAL="\033[0;33m"
 RESET="\033[0m"
 
+XIPKG_INSTALL=/usr/lib/xipkg/install.sh
+[ -f $XIPKG_INSTALL ] && . $XIPKG_INSTALL
+
 # scan and run all postinstall scripts
 #
 run_postinstall () {
@@ -26,15 +29,6 @@ run_postinstall () {
     fi
 }
 
-# install a single package if it is present
-# 
-# arg: the exported .xipkg file
-#
-install_package () {
-    printf "${INFO}${TABCHAR}install " 
-    xi -nyulq -r ${XIB_CHROOT} install $1 && printf "${PASS}${CHECKMARK}\n"
-}
-
 # build a package by its name
 # 
 build_package () {
@@ -51,7 +45,11 @@ build_package () {
         # install the package it exists
         local exported_pkg=$(find $XIB_EXPORT -wholename "*/$name.xipkg" | head -1 | xargs realpath)
         if $install && [ -f $exported_pkg ] ; then
-            install_package $exported_pkg
+            printf "${INFO}${TABCHAR}install " 
+            INSTALLED_DIR="$XIB_CHROOT/var/lib/xipkg/installed/"
+            SYSROOT=$XIB_CHROOT
+            VERBOSE=false
+            install_package $exported_pkg $name && printf "${PASS}${CHECKMARK}\n" || printf "${NEUTRAL}${CHECKMARK}\n"
         fi
 
         return 0
