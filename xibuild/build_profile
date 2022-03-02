@@ -1,7 +1,9 @@
+
+export JOBS=$(grep "processor" /proc/cpuinfo | wc -l)
 export HOME=/root
 export PATH=/bin:/usr/bin:/sbin:/usr/sbin:/tools/bin
 
-export MAKEFLAGS="-j$(grep "processor" /proc/cpuinfo | wc -l)"
+export MAKEFLAGS="-j$JOBS"
 export XORG_PREFIX="/usr"
 
 export XORG_CONFIG="--prefix=/usr --sysconfdir=/etc --localstatedir=/var --disable-static"
