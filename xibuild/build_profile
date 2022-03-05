@@ -1,3 +1,9 @@
+apply_patches () {
+    for p in *.patch; do
+        echo "Applying $p"
+        patch -Np1 -i $p
+    done
+}
 
 export JOBS=$(grep "processor" /proc/cpuinfo | wc -l)
 export HOME=/root

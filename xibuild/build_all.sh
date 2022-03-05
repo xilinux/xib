@@ -39,7 +39,6 @@ build_package () {
     
     if [ -f "$buildfile" ]; then
         printf "${INFO}%s\n${RESET}" $name 
-
         ./build_package.sh $buildfile || return 1
 
         # install the package it exists

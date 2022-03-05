@@ -82,6 +82,14 @@ fetch_source () {
     # download additional files
     if [ "$#" != 0 ]; then
         for url in $@; do
+            case $url in 
+                http*)
+                    ;;
+                *)
+                    url="file://${XIB_BUILDFILES}/extra/$url"
+                    ;;
+            esac
+
             local name=$(basename $url)
             curl -SsL $url > $src_dir/$name 
         done
@@ -229,6 +237,5 @@ build_pkg () {
 
 # import all of the functions and constants in the build file, so we know what to do
 . $BUILDFILE
-
 package_exists || build_pkg
 
