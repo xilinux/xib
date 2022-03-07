@@ -86,7 +86,7 @@ fetch_source () {
                 http*)
                     ;;
                 *)
-                    url="file://${XIB_BUILDFILES}/extra/$url"
+                    url="file://${XIB_BUILDFILES}/extra/$NAME/$url"
                     ;;
             esac
 

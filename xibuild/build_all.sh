@@ -14,7 +14,8 @@ XIPKG_INSTALL=/usr/lib/xipkg/install.sh
 run_postinstall () {
     postinstall="$XIB_CHROOT/var/lib/xipkg/postinstall"
     if [ -d $postinstall ]; then
-        for file in "$postinstall/*.sh"; do
+        printf "${INFO}${TABCHAR}postinstall " 
+        for file in $(ls $postinstall/*.sh); do
             f=$(basename $file)
 
             # run the postinstall file
@@ -22,8 +23,7 @@ run_postinstall () {
             chmod 755 $file
             xichroot "$XIB_CHROOT" "/var/lib/xipkg/postinstall/$f"
             rm $file
-
-            printf "$PASS run postinstall for $f!\n"
+            printf "${PASS}${CHECKMARK}\n"
         done
         rmdir $postinstall
     fi
@@ -49,6 +49,7 @@ build_package () {
             SYSROOT=$XIB_CHROOT
             VERBOSE=false
             install_package $exported_pkg $name && printf "${PASS}${CHECKMARK}\n" || printf "${NEUTRAL}${CHECKMARK}\n"
+            run_postinstall
         fi
 
         return 0
