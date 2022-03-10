@@ -28,7 +28,6 @@ sign () {
     printf "SIGNATURE="
     openssl dgst -sign $PRIV_KEY $1 | base64 | tr '\n' ' '
     printf "\n"
-    openssl dgst -sign $PRIV_KEY $1
 }
 
 list_line() {
@@ -44,7 +43,7 @@ list_line() {
 
 list_deps() {
     local info_file=$1
-    local deps=$(grep -a "^DEPS=\"" $info_file | sed -rn "s/DEPS=\"(.*)\"/\1/p")
+    local deps=$(grep "^DEPS=" $info_file | sed -rn 's/DEPS=(.*)/\1/p')
     local name=$(basename -s ".xipkg.info" $info_file)
 
     echo "$name: $deps"
