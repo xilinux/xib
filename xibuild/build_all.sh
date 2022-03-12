@@ -4,6 +4,7 @@ ERROR="\033[0;31m"
 INFO="\033[0;34m"
 PASS="\033[0;32m"
 NEUTRAL="\033[0;33m"
+EXTRA="\033[0;30m"
 RESET="\033[0m"
 
 XIPKG_INSTALL=/usr/lib/xipkg/install.sh
@@ -14,18 +15,27 @@ XIPKG_INSTALL=/usr/lib/xipkg/install.sh
 run_postinstall () {
     postinstall="$XIB_CHROOT/var/lib/xipkg/postinstall"
     if [ -d $postinstall ]; then
-        printf "${INFO}${TABCHAR}postinstall " 
-        for file in $(ls $postinstall/*.sh); do
+        printf "${EXTRA}(postinstall " 
+        for file in $(ls $postinstall); do
+            file=$postinstall/$file
             f=$(basename $file)
 
             # run the postinstall file
             #
             chmod 755 $file
             xichroot "$XIB_CHROOT" "/var/lib/xipkg/postinstall/$f"
-            rm $file
-            printf "${PASS}${CHECKMARK}\n"
+            echo $?
+            if [ "$?" == "0" ]; then
+                rm $file
+                printf "${PASS}${CHECKMARK}"
+            else
+                printf "${EXTRA}x"
+            fi
         done
-        rmdir $postinstall
+        printf ")\n"
+
+        [ "$(ls $postinstall | wc -w)" == 0 ] &&
+            rmdir $postinstall
     fi
 }
 
@@ -66,13 +76,19 @@ build_all () {
     done
 }
 
-if build_all; then 
-    printf "\n${PASS}Built all packages!\n${RESET}"
-    exit 0
-else
-    printf "${ERROR} Something went wrong!${NEUTRAL} Press enter to view recent log"
-    read out;
+while true; do
+    if build_all; then 
+        printf "\n${PASS}Built all packages!\n${RESET}"
+        exit 0
+    else
+        printf "${ERROR} Something went wrong!${NEUTRAL} Press enter to view recent log"
+        read out;
 
-    less $(ls -1 --sort time $XIB_EXPORT/repo/*/*.log | head -1 | xargs realpath)
-    exit 1
-fi
+        less $(ls -1 --sort time $XIB_EXPORT/repo/*/*.log | head -1 | xargs realpath)
+
+        read -p "Retry build? [Y/n]" response
+        if [ "$response" = "n" ]; then
+            exit 1
+        fi
+    fi
+done

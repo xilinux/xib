@@ -20,7 +20,7 @@ extract () {
             tar --lzip -xf "$FILE"
             ;;
         "zip" )
-            unzip $FILE
+            unzip -qq -o $FILE 
             ;;
         * )
             tar -xf $FILE
@@ -162,14 +162,11 @@ package || exit 1
 printf "checking for postinstall... "
 if command -v postinstall > /dev/null; then 
     echo "adding postinstall"
-    POSTINSTALL=$(type postinstall | sed '1,3d;$d')
-    if [ ${#POSTINSTALL} != 0 ]; then
-        POST_DIR=$PKG_DEST/var/lib/xipkg/postinstall
-        mkdir -p $POST_DIR
-        cat /build/$PKG_NAME.xibuild > $POST_DIR/$PKG_NAME.sh
-        echo "" >> $POST_DIR/$PKG_NAME.sh
-        echo "postinstall" >> $POST_DIR/$PKG_NAME.sh
-    fi
+    POST_DIR=$PKG_DEST/var/lib/xipkg/postinstall
+    mkdir -p $POST_DIR
+    cat /build/$PKG_NAME.xibuild > $POST_DIR/$PKG_NAME.sh
+    echo "" >> $POST_DIR/$PKG_NAME.sh
+    echo "postinstall" >> $POST_DIR/$PKG_NAME.sh
 else
     echo "no postinstall"
 fi
