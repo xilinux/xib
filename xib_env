@@ -18,3 +18,8 @@ export BUILDFILES_GIT_REPO="https://xi.davidovski.xyz/git/buildfiles.git"
 export INSTALLED_PACKAGES="$XIB_CHROOT/installed"
 
 export BUILD_PROFILE=$XIB_DIR/build_profile
+
+if [ -d ${DEVELOPMENT_BUILDFILES} ]; then
+    export XIB_BUILDFILES=$DEVELOPMENT_BUILDFILES
+fi
+
