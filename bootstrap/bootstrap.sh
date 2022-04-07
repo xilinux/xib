@@ -4,7 +4,7 @@
 ## VERSIONS ##
 # TODO move to a different package
 
-LINUX_VER=5.16.11
+LINUX_VER=5.17.1
 BINUTILS_VER=2.38
 MPFR_VER=4.1.0
 MPC_VER=1.2.1
@@ -52,7 +52,7 @@ chroot=$(pwd)/chroot
 
 PATH=${TOOLS}/bin:${CROSS_TOOLS}/bin:/usr/bin
 
-MAKEFLAGS="-j$(nproc)"
+MAKEFLAGS="-j$(grep "processor" /proc/cpuinfo | wc -l)"
 
 export chroot TARGET PATH WD CURL_OPTS CROSS_TOOLS TOOLS MAKEFLAGS
 
