@@ -6,17 +6,17 @@ cross_tools_kernel_headers () {
     make mrproper
 
     make ARCH=${ARCH} headers
-    mkdir -pv $CROSS_TOOLS/$TARGET/include
+    mkdir -p $CROSS_TOOLS/$TARGET/include
 
-    cp -rv usr/include/* $CROSS_TOOLS/$TARGET/include
-    find $CROSS_TOOLS/$TARGET/include -name '.*.cmd' -exec rm -vf {} \;
-    rm -v $CROSS_TOOLS/$TARGET/include/Makefile
+    cp -r usr/include/* $CROSS_TOOLS/$TARGET/include
+    find $CROSS_TOOLS/$TARGET/include -name '.*.cmd' -exec rm -f {} \;
+    rm $CROSS_TOOLS/$TARGET/include/Makefile
 }
 
 cross_tools_binutils () {
     src "https://ftp.gnu.org/gnu/binutils/binutils-$BINUTILS_VER.tar.xz"
 
-    mkdir -v build &&
+    mkdir build &&
         cd build &&
 
     ../configure \
@@ -40,11 +40,11 @@ cross_tools_gcc_static () {
     src "https://ftp.gnu.org/gnu/mpc/mpc-$MPC_VER.tar.gz"
     src "https://ftp.gnu.org/gnu/gcc/gcc-$GCC_VER/gcc-$GCC_VER.tar.xz"
 
-    mv -v ../mpfr-$MPFR_VER mpfr &&
-    mv -v ../gmp-$GMP_VER gmp &&
-    mv -v ../mpc-$MPC_VER mpc &&
+    mv ../mpfr-$MPFR_VER mpfr &&
+    mv ../gmp-$GMP_VER gmp &&
+    mv ../mpc-$MPC_VER mpc &&
 
-    mkdir -v build && cd  build &&
+    mkdir build && cd  build &&
 
     CFLAGS='-g0 -O0' \
     CXXFLAGS=$CFLAGS \
@@ -77,8 +77,8 @@ cross_tools_musl () {
     make && DESTDIR=${CROSS_TOOLS} make install &&
 
     # Add missing directory and link
-    mkdir -v ${CROSS_TOOLS}/usr &&
-    ln -sv ../include  ${CROSS_TOOLS}/usr/include &&
+    mkdir ${CROSS_TOOLS}/usr &&
+    ln -s ../include  ${CROSS_TOOLS}/usr/include &&
 
     case $(uname -m) in
       x86_64) export ARCH="x86_64"
@@ -92,14 +92,14 @@ cross_tools_musl () {
     esac
 
     # Fix link
-    rm -vf ${CROSS_TOOLS}/lib/ld-musl-${ARCH}.so.1 &&
-    ln -sv libc.so ${CROSS_TOOLS}/lib/ld-musl-${ARCH}.so.1
+    rm -f ${CROSS_TOOLS}/lib/ld-musl-${ARCH}.so.1 &&
+    ln -s libc.so ${CROSS_TOOLS}/lib/ld-musl-${ARCH}.so.1
 
     # Create link for ldd:
-    ln -sv ../lib/ld-musl-$ARCH.so.1 ${CROSS_TOOLS}/bin/ldd
+    ln -s ../lib/ld-musl-$ARCH.so.1 ${CROSS_TOOLS}/bin/ldd
 
     # Create config for dynamic library loading:
-    mkdir -v ${CROSS_TOOLS}/etc
+    mkdir ${CROSS_TOOLS}/etc
 
     echo $CROSS_TOOLS/lib >> ${CROSS_TOOLS}/etc/ld-musl-$ARCH.path 
     echo $TOOLS/lib >> ${CROSS_TOOLS}/etc/ld-musl-$ARCH.path 
@@ -116,9 +116,9 @@ cross_tools_gcc_final () {
     src "https://ftp.gnu.org/gnu/mpc/mpc-$MPC_VER.tar.gz"
     src "https://ftp.gnu.org/gnu/gcc/gcc-$GCC_VER/gcc-$GCC_VER.tar.xz"
 
-    mv -v ../mpfr-$MPFR_VER mpfr
-    mv -v ../gmp-$GMP_VER gmp
-    mv -v ../mpc-$MPC_VER mpc
+    mv ../mpfr-$MPFR_VER mpfr
+    mv ../gmp-$GMP_VER gmp
+    mv ../mpc-$MPC_VER mpc
 
     patch_gcc
 
