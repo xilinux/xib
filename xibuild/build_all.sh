@@ -71,7 +71,9 @@ build_package () {
 # build all of the packages
 #
 build_all () {
-    for line in $(perl build_order.pm); do
+    all="$(perl build_order.pm)"
+    echo "Building $(echo "$all" | wc -l )"
+    for line in $all; do
         build_package $line || return 1
     done
 }

@@ -108,7 +108,7 @@ ptch () {
 
 clean () {
     rm -rf $WD $CROSS_TOOLS $TOOLS
-    mkdir -pv $WD $CROSS_TOOLS $TOOL
+    mkdir -p $WD $CROSS_TOOLS $TOOL
 }
 
 mount_chroot () {

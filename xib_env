@@ -13,13 +13,10 @@ export XIB_EXPORT="$XIB_DIR/export"
 export PRIV_KEY="/home/david/.ssh/xi.pem"
 export PUB_KEY="/home/david/.ssh/xi.pub"
 export DEVELOPMENT_BUILDFILES="/home/david/docs/proj/xilinux/buildfiles"
+XIB_BUILDFILES=$DEVELOPMENT_BUILDFILES
 
 export BUILDFILES_GIT_REPO="https://xi.davidovski.xyz/git/buildfiles.git"
 export INSTALLED_PACKAGES="$XIB_CHROOT/installed"
 
 export BUILD_PROFILE=$XIB_DIR/build_profile
-
-if [ -d ${DEVELOPMENT_BUILDFILES} ]; then
-    export XIB_BUILDFILES=$DEVELOPMENT_BUILDFILES
-fi
 
