@@ -195,17 +195,31 @@ package_dest () {
     cp "$BUILDFILE" "$XIB_EXPORT/repo/$REPO/"
 }
 
+# strip debug symbols
+#
+strip_dest () {
+   local pkg_dest="$XIB_CHROOT/export"
+   for file in \
+       $(find $pkg_dest/ -type f -name \*.so* ! -name \*dbg) \
+       $(find $pkg_dest/ -type f -name \*.a) \
+       $(find $pkg_dest/ -type f -executable ); do
+       strip --strip-unneeded $file
+   done
+
+   find $pkg_dest -name \*.la -delete
+}
+
 # build the package
 #
 build_pkg () {
     local log_file="$XIB_EXPORT/repo/$REPO/$NAME.log"
 
     printf "${BLUE}${TABCHAR}prepare " 
-        prepare_build_env || return 1
+       prepare_build_env || return 1
     printf "${GREEN}${CHECKMARK}\n"
 
     printf "${BLUE}${TABCHAR}fetch " 
-        fetch_source || return 1
+       fetch_source || return 1
     printf "${GREEN}${CHECKMARK}${RESET}${INFOCHAR}$(du -sh "$XIB_CHROOT/build/source" | awk '{ print $1 }')\n"
 
     printf "${BLUE}${TABCHAR}generate "
@@ -214,6 +228,10 @@ build_pkg () {
 
     printf "${BLUE}${TABCHAR}build " 
         xichroot $XIB_CHROOT /build/build.sh > $log_file 2>&1 || return 1
+    printf "${GREEN}${CHECKMARK}\n"
+
+    printf "${BLUE}${TABCHAR}clean " 
+        strip_dest > $log_file 2>&1 || return 1
     printf "${GREEN}${CHECKMARK}\n"
 
     printf "${BLUE}${TABCHAR}package "

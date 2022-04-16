@@ -9,6 +9,7 @@ export XIB_DIR="/var/lib/xib"
 export XIB_BUILDFILES="$XIB_DIR/buildfiles"
 export XIB_CHROOT="$XIB_DIR/chroot"
 export XIB_EXPORT="$XIB_DIR/export"
+export LOG_FILE="$XIB_DIR/xib.log"
 
 export PRIV_KEY="/home/david/.ssh/xi.pem"
 export PUB_KEY="/home/david/.ssh/xi.pub"
@@ -19,4 +20,3 @@ export BUILDFILES_GIT_REPO="https://xi.davidovski.xyz/git/buildfiles.git"
 export INSTALLED_PACKAGES="$XIB_CHROOT/installed"
 
 export BUILD_PROFILE=$XIB_DIR/build_profile
-
