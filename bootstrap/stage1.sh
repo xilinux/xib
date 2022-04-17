@@ -22,6 +22,7 @@ cross_tools_binutils () {
     ../configure \
        --prefix=${CROSS_TOOLS} \
        --target=${TARGET} \
+       --host=${HOST}
        --with-sysroot=${CROSS_TOOLS}/${TARGET} \
        --disable-nls \
        --disable-multilib \

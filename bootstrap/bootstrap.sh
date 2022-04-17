@@ -61,6 +61,7 @@ FINDUTILS_VER=$(getversion findutils)
 CURL_OPTS="-SsL"
 
 
+HOST=x86_64-linux-gnu
 TARGET=x86_64-linux-musl
 ARCH=x86
 CPU=x86-64
