@@ -3,38 +3,55 @@
 
 ## VERSIONS ##
 # TODO move to a different package
+ 
+getbuildfiles () {
+    [ -d $BUILDFILES ] &&  { 
+        cd $BUILDFILES
+        git pull
+        cd $OLDPWD
+    } || {
+        mkdir $BUILDFILES
+        git clone https://xi.davidovski.xyz/git/buildfiles.git $BUILDFILES
+    }
+}
 
-LINUX_VER=5.17.2
-BINUTILS_VER=2.38
-MPFR_VER=4.1.0
-MPC_VER=1.2.1
-GMP_VER=6.2.1
-GCC_VER=11.2.0
-MUSL_VER=1.2.3
-FILE_VER=5.41
-TCL_VER=8.6.12
-M4_VER=1.4.19
-EXPECT_VER=5.45.4
-DEJAGNU_VER=1.6.3
-NCURSES_VER=6.3
-BASH_VER=5.1.16
-BISON_VER=3.8.2
-BZIP2_VER=1.0.8
-COREUTILS_VER=9.0
-DIFFUTILS_VER=3.8
-GAWK_VER=5.1.1
-GETTEXT_VER=0.21
-GREP_VER=3.7
-GZIP_VER=1.11
-MAKE_VER=4.3
-PATCH_VER=2.7.6
-SED_VER=4.8
-PERL_VER=5.34.1
-TEXINFO_VER=6.8
-FLEX_VER=2.6.4
+getversion() {
+    find $BUILDFILES/ -name "$1.xibuild" | head -1 | xargs grep "PKG_VER=" | cut -d"=" -f2
+}
+
+getbuildfiles
+
+LINUX_VER=$(getversion linux)
+BINUTILS_VER=$(getversion binutils)
+MPFR_VER=$(getversion mpfr)
+MPC_VER=$(getversion mpc)
+GMP_VER=$(getversion gmp)
+GCC_VER=$(getversion gcc)
+MUSL_VER=$(getversion musl)
+FILE_VER=$(getversion file)
+TCL_VER=$(getversion tcl)
+M4_VER=$(getversion m4)
+EXPECT_VER=$(getversion expect)
+DEJAGNU_VER=$(getversion dejagnu)
+NCURSES_VER=$(getversion ncurses)
+BASH_VER=$(getversion bash)
+BISON_VER=$(getversion bison)
+BZIP2_VER=$(getversion bzip2)
+COREUTILS_VER=$(getversion sbase)
+DIFFUTILS_VER=$(getversion diffutils)
+GAWK_VER=$(getversion gawk)
+GETTEXT_VER=$(getversion gettext)
+GREP_VER=$(getversion grep)
+GZIP_VER=$(getversion gzip)
+MAKE_VER=$(getversion make)
+PATCH_VER=$(getversion patch)
+SED_VER=$(getversion sed)
+PERL_VER=$(getversion perl)
+TEXINFO_VER=$(getversion texinfo)
+FLEX_VER=$(getversion fle)
 PERL_CROSS_VER=1.3.6
-GETTEXT_TINY_VER=0.3.2
-FINDUTILS_VER=4.9.0
+GETTEXT_TINY_VER=$(getversion gettext)
+FINDUTILS_VER=$(getversion findutils)
 
 ####
 
@@ -48,6 +65,7 @@ CPU=x86-64
 
 CROSS_TOOLS=/cross-tools
 TOOLS=/tools
+BUILDFILES=$WD/buildfiles
 chroot=$(pwd)/chroot
 
 PATH=${TOOLS}/bin:${CROSS_TOOLS}/bin:/usr/bin
