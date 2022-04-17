@@ -4,6 +4,9 @@
 ## VERSIONS ##
 # TODO move to a different package
  
+WD=$(pwd)/working
+BUILDFILES=$WD/buildfiles
+
 getbuildfiles () {
     [ -d $BUILDFILES ] &&  { 
         cd $BUILDFILES
@@ -57,7 +60,6 @@ FINDUTILS_VER=$(getversion findutils)
 
 CURL_OPTS="-SsL"
 
-WD=$(pwd)/working
 
 TARGET=x86_64-linux-musl
 ARCH=x86
@@ -65,7 +67,6 @@ CPU=x86-64
 
 CROSS_TOOLS=/cross-tools
 TOOLS=/tools
-BUILDFILES=$WD/buildfiles
 chroot=$(pwd)/chroot
 
 PATH=${TOOLS}/bin:${CROSS_TOOLS}/bin:/usr/bin
