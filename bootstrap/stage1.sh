@@ -35,7 +35,7 @@ cross_tools_binutils () {
 
 cross_tools_gcc_static () {
     cd ${WD}
-    src "https://www.mpfr.org/mpfr-$MPFR_VER/mpfr-$MPFR_VER.tar.xz"
+    src "https://ftp.gnu.org/gnu/mpfr/mpfr-$MPFR_VER.tar.xz"
     src "https://ftp.gnu.org/gnu/gmp/gmp-$GMP_VER.tar.xz"
     src "https://ftp.gnu.org/gnu/mpc/mpc-$MPC_VER.tar.gz"
     src "https://ftp.gnu.org/gnu/gcc/gcc-$GCC_VER/gcc-$GCC_VER.tar.xz"

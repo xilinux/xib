@@ -1,3 +1,5 @@
+export PATH=/bin:/usr/bin:/sbin:/usr/sbin:/tools/bin:/tools/sbin
+
 apply_patches () {
     for p in *.patch; do
         echo "Applying $p"
@@ -7,7 +9,6 @@ apply_patches () {
 
 export JOBS=$(grep "processor" /proc/cpuinfo | wc -l)
 export HOME=/root
-export PATH=/bin:/usr/bin:/sbin:/usr/sbin:/tools/bin
 
 export MAKEFLAGS="-j$JOBS"
 export XORG_PREFIX="/usr"

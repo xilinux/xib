@@ -86,7 +86,7 @@ while true; do
         printf "${ERROR} Something went wrong!${NEUTRAL} Press enter to view recent log"
         read out;
 
-        less $(ls -1 --sort time $XIB_EXPORT/repo/*/*.log | head -1 | xargs realpath)
+        less $(ls -t1 $XIB_EXPORT/repo/*/*.log | head -1 | xargs realpath)
 
         read -p "Retry build? [Y/n]" response
         if [ "$response" = "n" ]; then

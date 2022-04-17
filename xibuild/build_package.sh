@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 GREEN="\033[0;32m"
 BLUE="\033[0;34m"
@@ -70,7 +70,7 @@ fetch_source () {
             extract $downloaded_file
 
             # if the extracted file only had one directory
-            if [ "$(ls -l | wc -l)" = "3" ]; then
+            if [ "$(ls -1 | wc -l)" = "2" ]; then
                 for file in */* */.*; do 
                     echo $file | grep -q '\.$' || mv $file .
                 done;
