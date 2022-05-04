@@ -5,7 +5,7 @@
 XIPKG_INFO_VERSION='03'
 
 get_info() {
-        local name=$(basename -s ".xipkg" $1)
+        local name=$(basename $1 ".xipkg")
 
         local pkg_ver=$PKG_VER
         [ -z "$pkg_ver" ] && pkg_ver=$BRANCH
@@ -19,7 +19,7 @@ get_info() {
         echo "CHECKSUM=$(md5sum $1 | awk '{ print $1 }')"
         echo "VERSION=$pkg_ver"
         echo "SOURCE=$SOURCE"
-        echo "DATE=$(date -r $1)"
+        echo "DATE=$(stat -t $1 | cut -d' ' -f13 | xargs date -d)"
         echo "DEPS=${DEPS}"
         echo "MAKE_DEPS=${MAKE_DEPS}"
 }
@@ -33,10 +33,10 @@ sign () {
 list_line() {
     local pkg_file=$1
     
-    local name=$(basename -s ".xipkg" $pkg_file)
+    local name=$(basename $pkg_file ".xipkg" )
     local filecount=$(gzip -cd $pkg_file | tar -tvv | grep -c ^-)
     local checksum=$(md5sum $pkg_file | awk '{ print $1 }')
-    local size=$(stat -c %s $pkg_file)
+    local size=$(stat -t $pkg_file | cut -d" " -f2)
 
     echo $name.xipkg $checksum $size $filecount 
 }
@@ -44,7 +44,7 @@ list_line() {
 list_deps() {
     local info_file=$1
     local deps=$(grep "^DEPS=" $info_file | sed -rn 's/DEPS=(.*)/\1/p')
-    local name=$(basename -s ".xipkg.info" $info_file)
+    local name=$(basename $info_file ".xipkg.info" )
 
     echo "$name: $deps"
 }
@@ -66,11 +66,11 @@ hbar -t -T "removing old repos" $i $total
 graph_file="$XIB_EXPORT"/repo/deps.graph
 [ -f $graph_file ] && rm $graph_file
 
-list=$(ls "$XIB_EXPORT"/repo/*/*.xipkg)
+list=$(find "$XIB_EXPORT"/repo/ -name "*.xipkg")
 total=$(echo $list | wc -w)
 i=0
 for pkg in $list; do
-        name=$(basename -s ".xipkg" $pkg)
+        name=$(basename $pkg ".xipkg")
         repo=$(echo $pkg | rev | cut -d/ -f2 | rev)
         info_file="$XIB_EXPORT/repo/$repo/$name.xipkg.info"
         build_file="$XIB_EXPORT/repo/$repo/$name.xibuild"

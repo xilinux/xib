@@ -5,7 +5,7 @@ export INFOCHAR=" ~ "
 
 export MAKEFLAGS="-j$(grep "processor" /proc/cpuinfo | wc -l)"
 
-export XIB_DIR="/xilinux/var/lib/xib"
+export XIB_DIR="/var/lib/xib"
 export XIB_BUILDFILES="$XIB_DIR/buildfiles"
 export XIB_CHROOT="$XIB_DIR/chroot"
 export XIB_EXPORT="$XIB_DIR/export"

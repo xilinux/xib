@@ -86,7 +86,7 @@ fetch_source () {
                 http*)
                     ;;
                 *)
-                    url="file://${XIB_BUILDFILES}/extra/$NAME/$url"
+                    url="file://${XIB_BUILDFILES}/repo/$REPO/$NAME/$url"
                     ;;
             esac
 
@@ -231,7 +231,7 @@ build_pkg () {
     printf "${GREEN}${CHECKMARK}\n"
 
     printf "${BLUE}${TABCHAR}clean " 
-        strip_dest > $log_file 2>&1 || return 1
+        strip_dest >> $log_file 2>&1 || return 1
     printf "${GREEN}${CHECKMARK}\n"
 
     printf "${BLUE}${TABCHAR}package "

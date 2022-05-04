@@ -24,8 +24,7 @@ run_postinstall () {
             #
             chmod 755 $file
             xichroot "$XIB_CHROOT" "/var/lib/xipkg/postinstall/$f"
-            echo $?
-            if [ "$?" == "0" ]; then
+            if [ "$?" = "0" ]; then
                 rm $file
                 printf "${PASS}${CHECKMARK}"
             else
@@ -34,10 +33,15 @@ run_postinstall () {
         done
         printf ")\n"
 
-        [ "$(ls $postinstall | wc -w)" == 0 ] &&
+        [ "$(ls $postinstall | wc -w)" = 0 ] && \
             rmdir $postinstall
     fi
 }
+
+extract () {
+    tar -h -p -vvxf $1 -C ${SYSROOT} 2>${LOG_FILE} | grep ^- | tr -s " " | cut -d" " -f6 | cut -c2- 
+}
+
 
 # build a package by its name
 # 
@@ -45,7 +49,7 @@ build_package () {
 
     local name=$(echo $1 | cut -d"+" -f1)
     local install=$(echo $line | grep -q '+' && echo "true" || echo "false")
-    local buildfile=$(find $XIB_BUILDFILES -wholename "*/$name.xibuild" | head -1)
+    local buildfile=$(find $XIB_BUILDFILES/repo/ -wholename "*/$name.xibuild" | head -1)
     
     if [ -f "$buildfile" ]; then
         printf "${INFO}%s\n${RESET}" $name 
