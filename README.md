@@ -1,5 +1,17 @@
-# Generating all xilinux packages
+# xib
+xilinux build system
 
+requires xibuild and xipkg to function correctly. Will build a whole "repo" of packages, or single packages if requested, using portable chroot system
+
+## Usage
+
+`xibd` - the xib daemon, will automatically pull and build packages
+
+`xib package` - build a single package
+
+`xib` - build all packages in order
+
+### Generating all xilinux packages
 1. cross compile toolchain
 
 - start with a nice easy clean install 

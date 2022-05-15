@@ -6,7 +6,6 @@
 XIPKG_INSTALL=/usr/lib/xipkg/install.sh
 [ -f $XIPKG_INSTALL ] && . $XIPKG_INSTALL
 
-
 xib_dir="/var/lib/xib"
 priv_key="xi.pem"
 
@@ -35,7 +34,7 @@ publish_package () {
     for xipkg in $xipkgs; do
         local name=$(basename $xipkg ".xipkg")
         local filecount=$(gzip -cd $xipkg | tar -tvv | grep -cv ^d)
-        local checksum=$(md5sum $xipkg | awk '{ print $1 }')
+        local checksum=$(sha512sum $xipkg | awk '{ print $1 }')
         local size=$(stat -t $xipkg | cut -d" " -f2)
         local deps=$(grep "^DEPS=" $xipkg.info | sed -rn 's/DEPS=(.*)/\1/p')
 
@@ -92,10 +91,9 @@ build_package () {
 
 package_install () {
     local name=$1
-    local xipkg=$(get_package_file $1)
-
+    local xipkg=$2
+    SYSROOT=$3
     INSTALLED_DIR="$chroot/var/lib/xipkg/installed/"
-    SYSROOT=$chroot
     VERBOSE=false
 
     install_package $xipkg $name && printf "${PASS}${CHECKMARK}\n" || printf "${NEUTRAL}${CHECKMARK}\n"
@@ -144,7 +142,7 @@ xib_single () {
             pkgfile=$(get_package_file $dep)
                     [ "${#pkgfile}" = "0" ] && missing="$missing $dep"
             printf "${LIGHT_GREEN}+${LIGHT_CYAN}install $dep"
-            install_package $(get_package_file $dep) $dep
+            package_install $dep $(get_package_file $dep) $chroot
         }
     done
 
@@ -161,7 +159,6 @@ xib_single () {
 
 xib_all () {
     for name in $(build_order); do
-        # TODO CHECK IF the package is already built
 
         package=$(get_package_build $name)
         [ "${#package}" != 0 ] && [ -d "$package" ] && {
@@ -209,7 +206,11 @@ xibd () {
 [ "$#" = 0 ] && {
     xib_all
 } || {
-    for x in $@; do
+    [ "$1" = "bootstrap" ] && {
+        . ./bootstrap.sh
+        bootstrap
+        exit 0
+    } || for x in $@; do
         xib_single $x
     done
 }
