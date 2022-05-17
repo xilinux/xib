@@ -85,19 +85,14 @@ build_package () {
 
     rm -rf $stage
     mkdir -p $stage
-    xibuild -v -k $keychain/$priv_key -c $1 -d $stage -r $chroot || return 1
+    xibuild -v -k $keychain/$priv_key -C $1 -d $stage -r $chroot || return 1
     get_buildfiles_hash $1 > $stage/$name.xibsum
 }
 
 package_install () {
     local name=$1
     local xipkg=$2
-    SYSROOT=$3
-    INSTALLED_DIR="$chroot/var/lib/xipkg/installed/"
-    VERBOSE=false
-
-    install_package $xipkg $name && printf "${PASS}${CHECKMARK}\n" || printf "${NEUTRAL}${CHECKMARK}\n"
-    run_postinstall
+    xipkg -lny -r $3 install $xipkg && printf "${PASS}${CHECKMARK}\n" || printf "${NEUTRAL}${CHECKMARK}\n"
 }
 
 # get the direct dependencies of a single package

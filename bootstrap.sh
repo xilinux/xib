@@ -23,7 +23,6 @@ bison
 bzip2
 sbase
 sort
-ubase
 findutils
 diffutils
 gettext
@@ -35,9 +34,7 @@ perl
 sed
 tar
 texinfo
-xz
-flex
-toolchain-cmake
+cmake-toolchain
 ninja
 "
 
@@ -52,14 +49,15 @@ bootstrap () {
         parent=$(basename $pkg_build)
         [ ! -d "$stage/$parent" ] && mkdir -p $stage/$parent
         [ ! -f $stage/$parent/$pkg.xipkg ] && {
-            xibuild -v -k $keychain/$priv_key -c $pkg_build -d $stage/$parent -r $chroot || return 1
+            xibuild -nv -k $keychain/$priv_key -C $pkg_build -d $stage/$parent -r $chroot || return 1
         }
         echo "Installing $pkg"
-        xi -r $toolchaindest install $stage/$parent/$pkg.xipkg
+        xi -nyl -r $toolchaindest install $stage/$parent/$pkg.xipkg
     done
 
-    printf "creating tarball...\n"
+    printf "creating tarball..."
     output="xib-chroot-tools-$(date +%y%m%d).tar.xz"
     tar -C $toolchaindest -cJf $output ./ 
+    printf "Complete!\n"
 }
 
