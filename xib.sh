@@ -33,7 +33,7 @@ publish_package () {
 
     for xipkg in $xipkgs; do
         local name=$(basename $xipkg ".xipkg")
-        local filecount=$(gzip -cd $xipkg | tar -tvv | grep -cv ^d)
+        local filecount=$(tar -tvvf $xipkg | grep -cv ^d)
         local checksum=$(sha512sum $xipkg | awk '{ print $1 }')
         local size=$(stat -t $xipkg | cut -d" " -f2)
         local deps=$(grep "^DEPS=" $xipkg.info | sed -rn 's/DEPS=(.*)/\1/p')
@@ -92,7 +92,7 @@ build_package () {
 package_install () {
     local name=$1
     local xipkg=$2
-    xipkg -lny -r $3 install $xipkg && printf "${PASS}${CHECKMARK}\n" || printf "${NEUTRAL}${CHECKMARK}\n"
+    xipkg -qlny -r $3 install $xipkg && printf "${PASS}${CHECKMARK}\n" || printf "${NEUTRAL}${CHECKMARK}\n"
 }
 
 # get the direct dependencies of a single package
@@ -142,7 +142,7 @@ xib_single () {
     done
 
     [ "${#missing}" != "0" ] && {
-        printf "${RED}This package requires the following to be installed in order to build: ${LIGHT_RED}$missing\n"
+        printf "${RED}$name depends on these packages to be build before: ${LIGHT_RED}$missing\n"
         return 1
     }
 
@@ -161,7 +161,7 @@ xib_all () {
             [ -f "$seen/$name.xibsum" ] && [ "$(cat "$seen/$name.xibsum")" = "$xibsum" ]  && {
                 printf "${BLUE}$name${LIGHT_BLUE}...already built!\n"
             } || {
-                xib_single $name || return 1
+                xib_single $name 
             }
         } || {
             printf "${RED} could not find package for $name in $package $RESET\n"
@@ -192,10 +192,13 @@ build_order () {
 }
 
 xibd () {
-    cd $buildfiles
-    git pull
-    cd $xib_dir
-    xib_all
+    while true; do
+        cd $buildfiles
+        git pull
+        cd $xib_dir
+        xib_all
+        sleep 5
+    done
 }
 
 [ "$#" = 0 ] && {
