@@ -201,11 +201,7 @@ xibd () {
 [ "$#" = 0 ] && {
     xib_all
 } || {
-    [ "$1" = "bootstrap" ] && {
-        . ./bootstrap.sh
-        bootstrap
-        exit 0
-    } || for x in $@; do
+    for x in $@; do
         xib_single $x
     done
 }
