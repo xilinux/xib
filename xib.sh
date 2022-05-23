@@ -215,8 +215,7 @@ xibd () {
     xib_all
 } || {
     [ "$1" = "-d" ] &&  
-        xibd
-    || for x in $@; do
+    xibd || for x in $@; do
         xib_single $x
     done
 }
