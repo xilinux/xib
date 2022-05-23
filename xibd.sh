@@ -1,2 +1,3 @@
-. ./xib.sh && xibd
+#!/bin/sh
+xib -d
 
