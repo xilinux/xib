@@ -2,6 +2,7 @@
 
 [ -f /usr/lib/colors.sh ] && . /usr/lib/colors.sh
 [ -f /usr/lib/glyphs.sh ] && . /usr/lib/glyphs.sh
+[ -f /usr/lib/xilib.sh ] && . /usr/lib/xilib.sh
 
 XIPKG_INSTALL=/usr/lib/xipkg/install.sh
 [ -f $XIPKG_INSTALL ] && . $XIPKG_INSTALL
@@ -157,11 +158,15 @@ xib_single () {
     }
 
     build_package $package &&
-    publish_package $repo 
+    publish_package $repo && {
+        [ -e "$chroot/var/lib/xipkg/installed/$name" ] && {
+            xi -r $chroot -nyl remove $name
+        } || true
+    }
 }
 
 xib_all () {
-    for name in $(build_order); do
+    for name in $(build_order $(list_all)); do
 
         package=$(get_package_build $name)
         [ "${#package}" != 0 ] && [ -d "$package" ] && {
@@ -182,17 +187,8 @@ xib_all () {
     done
 }
 
-reverse_lines () {
-    local result=
-    while IFS= read -r line; do 
-        result="$line
-        $result"
-    done
-    echo "$result" 
-}
-
 build_order () {
-    for pkg in $(list_all); do 
+    for pkg in $@; do 
         set -- $(echo $pkg | tr '/' ' ')
         repo=$1
         name=$2
