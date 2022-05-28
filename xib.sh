@@ -38,12 +38,12 @@ publish_package () {
         local filecount=$(tar -tvvf $xipkg | grep -cv ^d)
         local checksum=$(sha512sum $xipkg | awk '{ print $1 }')
         local size=$(stat -t $xipkg | cut -d" " -f2)
-        local deps=$(grep "^DEPS=" $xipkg.info | sed -rn 's/DEPS=(.*)/\1/p')
+        local deps=$(grep "^DEPS=" $xipkg.info | sed -rn 's/DEPS=(.*)/\1/p' | tr '\n' ' ')
 
-        sed -i "s/^$name.xipkg//" $packageslist
+        sed -i "s/^$name.xipkg .*$//" $packageslist
         echo $name.xipkg $checksum $size $filecount  >> $packageslist
 
-        sed -i "s/^$name: //" $depsgraph
+        sed -i "s/^$name: .*$//" $depsgraph
         echo "$name: $deps" >> $depsgraph
 
         [ -f $stage/$name.xipkg ] && mv $stage/$name.xipkg $local_repo/$repo/$name.xipkg
@@ -135,24 +135,27 @@ get_buildfiles_hash () {
 
 xib_single () {
     local name=$1
+    local package=$(get_package_build $name)
+    local repo=$(echo "$package" | rev | cut -f2 -d'/' | rev)
     local deps=$(get_deps $name)
-    missing=""
-    for dep in $deps; do
-        [ -e "$chroot/var/lib/xipkg/installed/$dep" ] || {
-            pkgfile=$(get_package_file $dep)
-                    [ "${#pkgfile}" = "0" ] && missing="$missing $dep"
-            printf "${LIGHT_GREEN}+${LIGHT_CYAN}install $dep"
-            package_install $dep $(get_package_file $dep) $chroot
-        }
-    done
 
-    [ "${#missing}" != "0" ] && {
-        printf "${RED}$name depends on these packages to be build before: ${LIGHT_RED}$missing\n"
-        return 1
+    [ "$repo" != "meta" ] && {
+        missing=""
+        for dep in $deps; do
+            [ -e "$chroot/var/lib/xipkg/installed/$dep" ] || {
+                pkgfile=$(get_package_file $dep)
+                        [ "${#pkgfile}" = "0" ] && missing="$missing $dep"
+                printf "${LIGHT_GREEN}+${LIGHT_CYAN}install $dep"
+                package_install $dep $(get_package_file $dep) $chroot
+            }
+        done
+
+        [ "${#missing}" != "0" ] && {
+            printf "${RED}$name depends on these packages to be build before: ${LIGHT_RED}$missing\n"
+            return 1
+        }
     }
 
-    package=$(get_package_build $name)
-    repo=$(echo "$package" | rev | cut -f2 -d'/' | rev)
     build_package $package &&
     publish_package $repo 
 }
@@ -193,7 +196,7 @@ build_order () {
         set -- $(echo $pkg | tr '/' ' ')
         repo=$1
         name=$2
-        [ "$repo" != "meta" ] &&
+       # [ "$repo" != "meta" ] &&
         for dep in $(get_deps $name); do
             echo $name $dep
         done
