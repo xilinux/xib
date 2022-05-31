@@ -8,10 +8,11 @@ XIPKG_INSTALL=/usr/lib/xipkg/install.sh
 [ -f $XIPKG_INSTALL ] && . $XIPKG_INSTALL
 
 xib_dir="/var/lib/xib"
+build_profile="/etc/xib_profile.conf"
+
 priv_key="xi.pem"
 
-#buildfiles="$xib_dir/buildfiles"
-buildfiles="/home/david/docs/proj/xilinux/buildfiles"
+buildfiles="$xib_dir/buildfiles"
 seen="$xib_dir/seen"
 logs="$xib_dir/logs"
 chroot="$xib_dir/chroot"
@@ -22,13 +23,12 @@ keychain="$xib_dir/keychain"
 
 quickfail=true
 
-# add a package to the repo's packages.list
+# publish any packages in the stage directory to the repo
 #
 publish_package () {
-    xipkgs=$(ls $stage/*.xipkg)
-
-    packageslist="$local_repo/packages.list"
-    depsgraph="$local_repo/deps.graph"
+    local xipkgs=$(ls $stage/*.xipkg)
+    local packageslist="$local_repo/packages.list"
+    local depsgraph="$local_repo/deps.graph"
     [ ! -d "$local_repo" ] && mkdir -p "$local_repo"
     [ ! -f "$packageslist" ] && touch $packageslist
     [ ! -f "$depsgraph" ] && touch $depsgraph
@@ -61,15 +61,17 @@ publish_package () {
 
 # get root package from package name
 #
+#   get_package_build [name]
+#
 get_package_build () {
     local buildfile=$(find $buildfiles/repo -name "$1.xibuild" | head -1)
     echo ${buildfile%/*}
 }
 
+# list all packages available
+#
 list_all () {
-    for name in $(ls -1 $buildfiles/repo/); do
-        echo "$name"
-    done
+    ls -1 $buildfiles/repo/
 }
 
 # get package file from package name
@@ -78,7 +80,9 @@ get_package_file () {
     find $local_repo/ -name "$1.xipkg" | head -1
 }
 
-# Use xibuild to build a singular package, input is packagebuild dir
+# build a single package using xibuild
+#
+# build_package [build directory]
 #
 build_package () {
     local name=$(basename $1)
@@ -90,10 +94,22 @@ build_package () {
     rm -f $logs/$name.log
     touch $logs/$name.log
 
-    xibuild -v -l $logs/$name.log -k $keychain/$priv_key -C $1 -d $stage -r $chroot || return 1
+    xibuild -v \
+        -C $1 \
+        -d $stage \
+        -r $chroot \
+        -l $logs/$name.log \
+        -k $keychain/$priv_key \
+        -p $build_profile \
+        || return 1
+
     get_buildfiles_hash $1 > $stage/$name.xibsum
 }
 
+# installs a package
+#  
+#   package_install [name] [xipkg file]
+#
 package_install () {
     local name=$1
     local xipkg=$2
@@ -103,12 +119,18 @@ package_install () {
 
 # get the direct make dependencies of a single package
 #
+#   get_deps [name]
+#
 get_deps () {
     local package=$(get_package_build $1)
     [ -d $package ] && 
              sed -rn "s/^.*DEPS=\"(.*)\"/\1/p" $package/$1.xibuild
 }
 
+# list dependencies of a list of packages
+# 
+#   list_deps [dependencies]
+#
 list_deps () {
     local deps=""
     while [ "$#" != "0" ]; do
@@ -129,6 +151,8 @@ list_deps () {
 
 # check if a package build dir actually requires any building
 #
+#   is_meta [xibuild dir]
+#
 is_meta () {
     local package=$1
     local name=${package#${package%/*}/}
@@ -136,17 +160,24 @@ is_meta () {
     [ -z "$src" ]
 }
 
+# get the checksum of a whole package's buildfiles
+#
+#   get_buildfiles_hash [xibuild dir]
+#
 get_buildfiles_hash () {
     cat $1/*.xibuild | sha512sum | cut -d' ' -f1
 }
 
+# build a single package
+#
+#   xib_single [name]
+#
 xib_single () {
     local name=$1
     local package=$(get_package_build $name)
-    local 
     local deps=$(get_deps $name)
+    local missing=""
 
-    missing=""
     is_meta $package || {
         for dep in $deps; do
             [ -e "$chroot/var/lib/xipkg/installed/$dep" ] || {
@@ -163,14 +194,17 @@ xib_single () {
         return 1
     }
 
-    build_package $package &&
-    publish_package && {
-        [ -e "$chroot/var/lib/xipkg/installed/$name" ] && {
-            xi -r $chroot -nyl remove $name
+    build_package $package \
+        && publish_package \
+        && {
+            [ -e "$chroot/var/lib/xipkg/installed/$name" ] && {
+                xi -r $chroot -nyl remove $name
         } || true
     }
 }
 
+# build all packages
+#
 xib_all () {
     for name in $(build_order $(list_all)); do
 
@@ -193,6 +227,11 @@ xib_all () {
     done
 }
 
+# return the order that packages should be built
+# sorted topologically from dependencies
+#
+#   build_order [packages...]
+#
 build_order () {
     for pkg in $@; do 
         for dep in $(get_deps $pkg); do
@@ -201,6 +240,8 @@ build_order () {
     done | tsort | reverse_lines
 }
 
+# main loop of the xib daemon
+#
 xibd () {
     quickfail=false
     while true; do
