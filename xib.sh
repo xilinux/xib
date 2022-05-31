@@ -25,12 +25,11 @@ quickfail=true
 # add a package to the repo's packages.list
 #
 publish_package () {
-    local repo=$1 
     xipkgs=$(ls $stage/*.xipkg)
 
-    packageslist="$local_repo/$repo/packages.list"
+    packageslist="$local_repo/packages.list"
     depsgraph="$local_repo/deps.graph"
-    [ ! -d "$local_repo/$repo" ] && mkdir -p "$local_repo/$repo"
+    [ ! -d "$local_repo" ] && mkdir -p "$local_repo"
     [ ! -f "$packageslist" ] && touch $packageslist
     [ ! -f "$depsgraph" ] && touch $depsgraph
 
@@ -47,10 +46,10 @@ publish_package () {
         sed -i "s/^$name: .*$//" $depsgraph
         echo "$name: $deps" >> $depsgraph
 
-        [ -f $stage/$name.xipkg ] && mv $stage/$name.xipkg $local_repo/$repo/$name.xipkg
-        [ -f $stage/$name.xipkg.info ] && mv $stage/$name.xipkg.info $local_repo/$repo/$name.xipkg.info
-        [ -f $stage/$name.xibuild ] && mv $stage/$name.xibuild $local_repo/$repo/$name.xibuild
-        [ -f $logs/$name.log ] && cp $logs/$name.log $local_repo/$repo/$name.log
+        [ -f $stage/$name.xipkg ] && mv $stage/$name.xipkg $local_repo/$name.xipkg
+        [ -f $stage/$name.xipkg.info ] && mv $stage/$name.xipkg.info $local_repo/$name.xipkg.info
+        [ -f $stage/$name.xibuild ] && mv $stage/$name.xibuild $local_repo/$name.xibuild
+        [ -f $logs/$name.log ] && cp $logs/$name.log $local_repo/$name.log
     done
 
     [ ! -d "$seen" ] && mkdir -p $seen
@@ -68,10 +67,8 @@ get_package_build () {
 }
 
 list_all () {
-    for repo in $(ls -1 $buildfiles/repo); do
-        for name in $(ls -1 $buildfiles/repo/$repo); do
-            echo "$repo/$name"
-        done
+    for name in $(ls -1 $buildfiles/repo/); do
+        echo "$name"
     done
 }
 
@@ -104,7 +101,7 @@ package_install () {
         xipkg -qlny -r $3 install $xipkg && printf "${PASS}${CHECKMARK}\n" || printf "${NEUTRAL}${CHECKMARK}\n"
 }
 
-# get the direct dependencies of a single package
+# get the direct make dependencies of a single package
 #
 get_deps () {
     local package=$(get_package_build $1)
@@ -130,6 +127,15 @@ list_deps () {
     echo "$deps" 
 }
 
+# check if a package build dir actually requires any building
+#
+is_meta () {
+    local package=$1
+    local name=${package#${package%/*}/}
+    local src=$(sed -rn "s/^SOURCE=\"(.*)\"/\1/p" $package/$name.xibuild | head -1)
+    [ -z "$src" ]
+}
+
 get_buildfiles_hash () {
     cat $1/*.xibuild | sha512sum | cut -d' ' -f1
 }
@@ -137,11 +143,11 @@ get_buildfiles_hash () {
 xib_single () {
     local name=$1
     local package=$(get_package_build $name)
-    local repo=$(echo "$package" | rev | cut -f2 -d'/' | rev)
+    local 
     local deps=$(get_deps $name)
 
-    [ "$repo" != "meta" ] && {
-        missing=""
+    missing=""
+    is_meta $package || {
         for dep in $deps; do
             [ -e "$chroot/var/lib/xipkg/installed/$dep" ] || {
                 pkgfile=$(get_package_file $dep)
@@ -150,15 +156,15 @@ xib_single () {
                 package_install $dep $(get_package_file $dep) $chroot
             }
         done
+    }
 
-        [ "${#missing}" != "0" ] && {
-            printf "${RED}$name depends on these packages to be build before: ${LIGHT_RED}$missing\n"
-            return 1
-        }
+    [ "${#missing}" != "0" ] && {
+        printf "${RED}$name depends on these packages to be build before: ${LIGHT_RED}$missing\n"
+        return 1
     }
 
     build_package $package &&
-    publish_package $repo && {
+    publish_package && {
         [ -e "$chroot/var/lib/xipkg/installed/$name" ] && {
             xi -r $chroot -nyl remove $name
         } || true
@@ -189,12 +195,8 @@ xib_all () {
 
 build_order () {
     for pkg in $@; do 
-        set -- $(echo $pkg | tr '/' ' ')
-        repo=$1
-        name=$2
-       # [ "$repo" != "meta" ] &&
-        for dep in $(get_deps $name); do
-            echo $name $dep
+        for dep in $(get_deps $pkg); do
+            echo $pkg $dep
         done
     done | tsort | reverse_lines
 }
