@@ -12,7 +12,8 @@ build_profile="/etc/xib_profile.conf"
 
 priv_key="xi.pem"
 
-buildfiles="$xib_dir/buildfiles"
+buildfiles="/home/david/docs/proj/xilinux/buildfiles"
+#buildfiles="$xib_dir/buildfiles"
 seen="$xib_dir/seen"
 logs="$xib_dir/logs"
 chroot="$xib_dir/chroot"
@@ -22,6 +23,18 @@ local_repo="$xib_dir/repo"
 keychain="$xib_dir/keychain"
 
 quickfail=true
+
+usage () {
+    cat << EOF
+${LIGHT_RED}Usage: ${RED}xib [option] [package]
+${BLUE}Avaiable Options:
+    ${BLUE}-d
+        ${LIGHT_CYAN}daemon; run as a daemon, automatically rebuilding all packages
+    ${BLUE}-p
+        ${LIGHT_CYAN}publish; publish packages in the stage to the repo
+${RESET}
+EOF
+}
 
 # publish any packages in the stage directory to the repo
 #
@@ -96,7 +109,7 @@ build_package () {
 
     xibuild -v \
         -C $1 \
-        -d $stage \
+        -o $stage \
         -r $chroot \
         -l $logs/$name.log \
         -k $keychain/$priv_key \
@@ -198,7 +211,7 @@ xib_single () {
         && publish_package \
         && {
             [ -e "$chroot/var/lib/xipkg/installed/$name" ] && {
-                xi -r $chroot -nyl remove $name
+                xi -r $chroot -nqyl remove $name
         } || true
     }
 }
@@ -256,9 +269,20 @@ xibd () {
 [ "$#" = 0 ] && {
     xib_all
 } || {
-    [ "$1" = "-d" ] &&  
-    xibd || for x in $@; do
-        xib_single $x
-    done
+    case "$1" in 
+        "-d")
+            xibd;;
+        "-p")
+            publish_package
+            ;;
+        "-h")
+            usage
+            ;;
+        *)
+        for x in $@; do
+            xib_single $x
+        done
+        ;;
+    esac
 }
 
