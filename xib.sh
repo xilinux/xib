@@ -225,7 +225,8 @@ xib_all () {
         [ "${#package}" != 0 ] && [ -d "$package" ] && {
             local package_name="$(basename ${package#/*})"
             xibsum=$(get_buildfiles_hash $package)
-            [ -f "$seen/$package_name.xibsum" ] && [ "$(cat "$seen/$package_name.xibsum")" = "$xibsum" ]  && {
+            [ -f "$seen/$package_name.xibsum" ] && \
+                [ "$(cat "$seen/$package_name.xibsum")" = "$xibsum" ] && {
                 printf "${BLUE}$package_name${LIGHT_BLUE}...already built!\n"
             } || {
                 xib_single $name || {
