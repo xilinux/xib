@@ -61,13 +61,13 @@ FINDUTILS_VER=$(getversion findutils)
 CURL_OPTS="-SsL"
 
 
-HOST=x86_64-linux-gnu
+HOST=x86_64-linux-musl
 TARGET=x86_64-linux-musl
 ARCH=x86
 CPU=x86-64
 
-CROSS_TOOLS=/cross-tools
-TOOLS=/tools
+CROSS_TOOLS=/xilinux/bootstrap/cross-tools
+TOOLS=/xilinux/bootstrap/tools
 chroot=$(pwd)/chroot
 
 PATH=${TOOLS}/bin:${CROSS_TOOLS}/bin:/usr/bin

@@ -4,9 +4,6 @@
 [ -f /usr/lib/glyphs.sh ] && . /usr/lib/glyphs.sh
 [ -f /usr/lib/xilib.sh ] && . /usr/lib/xilib.sh
 
-XIPKG_INSTALL=/usr/lib/xipkg/install.sh
-[ -f $XIPKG_INSTALL ] && . $XIPKG_INSTALL
-
 xib_dir="/var/lib/xib"
 build_profile="/etc/xib_profile.conf"
 
@@ -137,7 +134,7 @@ package_install () {
 get_deps () {
     local package=$(get_package_build $1)
     [ -d $package ] && 
-             sed -rn "s/^.*DEPS=\"(.*)\"/\1/p" $package/$1.xibuild
+             sed -rn "s/^MAKEDEPS=\"(.*)\"/\1/p" $package/$1.xibuild
 }
 
 # list dependencies of a list of packages
@@ -191,16 +188,14 @@ xib_single () {
     local deps=$(get_deps $name)
     local missing=""
 
-    is_meta $package || {
-        for dep in $deps; do
-            [ -e "$chroot/var/lib/xipkg/installed/$dep" ] || {
-                pkgfile=$(get_package_file $dep)
-                        [ "${#pkgfile}" = "0" ] && missing="$missing $dep"
-                printf "${LIGHT_GREEN}+${LIGHT_CYAN}install $dep"
-                package_install $dep $(get_package_file $dep) $chroot
-            }
-        done
-    }
+    for dep in $deps; do
+        [ -e "$chroot/var/lib/xipkg/installed/$dep" ] || {
+            pkgfile=$(get_package_file $dep)
+                    [ "${#pkgfile}" = "0" ] && missing="$missing $dep"
+            printf "${LIGHT_GREEN}+${LIGHT_CYAN}install $dep"
+            package_install $dep $(get_package_file $dep) $chroot
+        }
+    done
 
     [ "${#missing}" != "0" ] && {
         printf "${RED}$name depends on these packages to be build before: ${LIGHT_RED}$missing\n"
