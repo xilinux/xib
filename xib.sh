@@ -254,9 +254,9 @@ build_order () {
 xibd () {
     quickfail=false
     while true; do
-        cd $buildfiles
-        git pull
-        cd $xib_dir
+        #cd $buildfiles
+        #git pull
+        #cd $xib_dir
         xib_all
         sleep 5
     done
